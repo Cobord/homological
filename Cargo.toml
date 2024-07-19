@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 bitvector = "^0.1.5"
+bitvec = "^1.0.1"
