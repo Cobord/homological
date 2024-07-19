@@ -11,4 +11,19 @@ pub trait MatrixStore<F: Field>: Add + Mul + Sized {
     fn is_zero_matrix(&self) -> bool;
     fn composed_eq_zero(&self, other: &Self) -> bool;
     fn transpose(&self) -> Self;
+    fn rank(&self) -> usize;
+    fn kernel(&self) -> usize;
+    fn kernel_basis(&self) -> Vec<Self>;
+    fn homology_info(&self, previous_d: &Self) -> (usize, Vec<Self>) {
+        // the rank of homology with outgoing differential self and incoming
+        // differential previous_d
+        // also a basis for the kernel which will have some
+        // linear dependencies when regarded as the equivalence classes in cohomology
+        // but we haven't chosen a basis for the quotient, only the kernel
+        assert!(self.composed_eq_zero(previous_d));
+        let my_kernel_size = self.kernel();
+        let previous_image_size = previous_d.rank();
+        assert!(my_kernel_size >= previous_image_size);
+        (my_kernel_size - previous_image_size, self.kernel_basis())
+    }
 }

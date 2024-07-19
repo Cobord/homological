@@ -151,6 +151,18 @@ impl MatrixStore<F2> for F2Matrix {
         }
         to_return
     }
+
+    fn rank(&self) -> usize {
+        todo!()
+    }
+
+    fn kernel(&self) -> usize {
+        todo!()
+    }
+
+    fn kernel_basis(&self) -> Vec<Self> {
+        todo!()
+    }
 }
 
 #[allow(dead_code)]
