@@ -4,6 +4,7 @@ use bitvec::prelude::BitVec;
 
 use crate::field_generals::{Field, MatrixStore};
 
+#[derive(PartialEq, Eq, Debug)]
 #[repr(transparent)]
 pub struct F2(bool);
 
@@ -41,7 +42,17 @@ impl Div for F2 {
     }
 }
 
-impl Field for F2 {}
+impl From<usize> for F2 {
+    fn from(value: usize) -> Self {
+        Self(value % 2 == 0)
+    }
+}
+
+impl Field for F2 {
+    fn characteristic(_primes: Box<dyn Iterator<Item=usize>>) -> usize {
+        2
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct F2Matrix {
