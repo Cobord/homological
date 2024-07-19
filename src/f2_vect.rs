@@ -49,7 +49,7 @@ impl From<usize> for F2 {
 }
 
 impl Field for F2 {
-    fn characteristic(_primes: Box<dyn Iterator<Item=usize>>) -> usize {
+    fn characteristic(_primes: Box<dyn Iterator<Item = usize>>) -> usize {
         2
     }
 }

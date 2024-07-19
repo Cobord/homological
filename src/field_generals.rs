@@ -1,14 +1,14 @@
 use std::ops::{Add, Div, Mul, Sub};
 
 pub trait Field: Add + Sub + Mul + Div + Eq + From<usize> + Sized {
-    fn characteristic(primes: Box<dyn Iterator<Item=usize>>) -> usize {
+    fn characteristic(primes: Box<dyn Iterator<Item = usize>>) -> usize {
         let zero_f = Self::from(0);
         for i in primes {
             if Self::from(i) == zero_f {
                 return i;
             }
         }
-        return 0;
+        0
     }
 }
 
