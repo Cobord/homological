@@ -1,53 +1,62 @@
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
-use crate::field_generals::{Field, MatrixStore};
+use crate::field_generals::Ring;
+use crate::matrix_store::{BasisIndexing, MatrixStore};
 
-pub trait HomSigns {
+mod private {
+    pub trait Sealed {}
+}
+
+pub trait HomSigns: private::Sealed {
     fn differential_increases() -> bool;
 }
 
-struct HomologicalIndex {}
+pub struct HomologicalIndex {}
+impl private::Sealed for HomologicalIndex {}
 impl HomSigns for HomologicalIndex {
     fn differential_increases() -> bool {
         false
     }
 }
 
-struct CohomologicalIndex {}
+pub struct CohomologicalIndex {}
+impl private::Sealed for CohomologicalIndex {}
 impl HomSigns for CohomologicalIndex {
     fn differential_increases() -> bool {
         true
     }
 }
 
-pub struct ChainFVect<R: HomSigns, F: Field, M: MatrixStore<F>> {
-    homological_index: i64,
-    dimension: usize,
+pub(crate) type HomologicalIndexing = i64;
+
+pub struct ChainFVect<R: HomSigns, F: Ring, M: MatrixStore<F>> {
+    homological_index: HomologicalIndexing,
+    dimension: BasisIndexing,
     differential: M,
     homsign: PhantomData<R>,
-    field_info: PhantomData<F>,
+    ring_info: PhantomData<F>,
     rest: Option<Box<ChainFVect<R, F, M>>>,
 }
 
 impl<R, F, M> ChainFVect<R, F, M>
 where
     R: HomSigns,
-    F: Field,
+    F: Ring,
     M: MatrixStore<F>,
 {
-    pub fn concentrated_in_0(dimension: usize) -> Self {
+    pub fn concentrated_in_0(dimension: BasisIndexing) -> Self {
         Self {
             homological_index: 0,
             dimension,
             differential: M::zero_matrix(0, dimension),
-            field_info: PhantomData,
+            ring_info: PhantomData,
             homsign: PhantomData,
             rest: None,
         }
     }
 
     #[allow(dead_code)]
-    pub fn dimensions_each_index(&self) -> Vec<(i64, usize)> {
+    pub fn dimensions_each_index(&self) -> Vec<(HomologicalIndexing, BasisIndexing)> {
         debug_assert!(self.dimension == self.differential.dimensions().1);
         let mut return_val = if let Some(real_rest) = self.rest.as_ref() {
             debug_assert!(real_rest.dimension == self.differential.dimensions().0);
@@ -61,15 +70,40 @@ where
     }
 
     #[allow(dead_code)]
-    pub fn shift_all(&mut self, how_much: i64) {
+    pub fn bettis_each_index(
+        &self,
+        incoming_differential: Option<&M>,
+    ) -> Vec<(HomologicalIndexing, BasisIndexing)> {
+        debug_assert!(self.dimension == self.differential.dimensions().1);
+        let mut return_val = if let Some(real_rest) = self.rest.as_ref() {
+            debug_assert!(real_rest.dimension == self.differential.dimensions().0);
+            real_rest.bettis_each_index(Some(&self.differential))
+        } else {
+            debug_assert!(0 == self.differential.dimensions().0);
+            vec![]
+        };
+        let my_betti = if let Some(real_incoming) = incoming_differential {
+            self.differential
+                .homology_info(real_incoming, true, false)
+                .expect("d^2 = 0 by construction")
+                .0
+        } else {
+            self.differential.kernel()
+        };
+        return_val.push((self.homological_index, my_betti));
+        return_val
+    }
+
+    #[allow(dead_code)]
+    pub fn shift_all(&mut self, how_much: HomologicalIndexing) {
         self.homological_index += how_much;
         if let Some(real_rest) = self.rest.as_deref_mut() {
             real_rest.shift_all(how_much);
         }
     }
 
-    pub fn prepend_zero_spaces(&mut self, how_many: usize) {
-        if how_many == 0 {
+    pub fn prepend_zero_spaces(&mut self, how_many: HomologicalIndexing) {
+        if how_many <= 0 {
             return;
         }
         self.prepend_zero_space();
@@ -84,12 +118,12 @@ where
         };
         let next_dimension = self.dimension;
         let mut fake_self = Self::concentrated_in_0(0);
-        std::mem::swap(&mut fake_self, self);
+        core::mem::swap(&mut fake_self, self);
         *self = Self {
             homological_index: new_index,
             dimension: 0,
             differential: M::zero_matrix(next_dimension, 0),
-            field_info: PhantomData,
+            ring_info: PhantomData,
             homsign: PhantomData,
             rest: Some(Box::new(fake_self)),
         };
@@ -102,7 +136,7 @@ where
         if self_index == other_index {
             return;
         }
-        let to_prepend = other_index.abs_diff(self_index) as usize;
+        let to_prepend = other_index.abs_diff(self_index) as HomologicalIndexing;
         if R::differential_increases() {
             if other_index > self_index {
                 other.prepend_zero_spaces(to_prepend);
@@ -123,7 +157,11 @@ where
     }
 
     #[allow(dead_code)]
-    pub fn prepend_space(&mut self, new_dimension: usize, new_differential: M) -> Result<(), bool> {
+    pub fn prepend_space(
+        &mut self,
+        new_dimension: BasisIndexing,
+        new_differential: M,
+    ) -> Result<(), bool> {
         let new_index = if R::differential_increases() {
             self.homological_index - 1
         } else {
@@ -139,22 +177,46 @@ where
             return Err(true);
         }
         let mut fake_self = Self::concentrated_in_0(0);
-        std::mem::swap(&mut fake_self, self);
+        core::mem::swap(&mut fake_self, self);
         *self = Self {
             homological_index: new_index,
             dimension: new_dimension,
             differential: new_differential,
-            field_info: PhantomData,
+            ring_info: PhantomData,
             homsign: PhantomData,
             rest: Some(Box::new(fake_self)),
         };
         Ok(())
     }
+
+    #[allow(dead_code)]
+    fn apply_all_differentials(
+        &self,
+        starting_index: HomologicalIndexing,
+        _vectors: &mut Vec<M::ColumnVector>,
+    ) {
+        if starting_index > self.homological_index {
+            if let Some(real_rest) = &self.rest {
+                let next_index =
+                    self.homological_index + if R::differential_increases() { 1 } else { -1 };
+                real_rest.apply_all_differentials(next_index, _vectors);
+                return;
+            } else {
+                todo!()
+            }
+        }
+        if starting_index == self.homological_index {
+            todo!()
+        }
+        if starting_index < self.homological_index {
+            todo!()
+        }
+    }
 }
 
 impl<F, M> ChainFVect<CohomologicalIndex, F, M>
 where
-    F: Field,
+    F: Ring,
     M: MatrixStore<F>,
 {
     #[allow(dead_code)]
@@ -163,7 +225,7 @@ where
             homological_index: -self.homological_index,
             dimension: self.dimension,
             differential: self.differential,
-            field_info: PhantomData,
+            ring_info: PhantomData,
             homsign: PhantomData,
             rest: self
                 .rest
@@ -174,7 +236,7 @@ where
 
 impl<F, M> ChainFVect<HomologicalIndex, F, M>
 where
-    F: Field,
+    F: Ring,
     M: MatrixStore<F>,
 {
     #[allow(dead_code)]
@@ -184,7 +246,7 @@ where
             dimension: self.dimension,
             differential: self.differential,
             homsign: PhantomData,
-            field_info: PhantomData,
+            ring_info: PhantomData,
             rest: self
                 .rest
                 .map(|real_rest| Box::new(real_rest.negate_homological_indices())),
@@ -198,7 +260,7 @@ mod test {
     fn two_term_id_complex() {
         use super::{ChainFVect, CohomologicalIndex};
         use crate::f2_vect::{F2Matrix, F2};
-        use crate::field_generals::MatrixStore;
+        use crate::matrix_store::MatrixStore;
         let dimension = 5;
         let identity_matrix = F2Matrix::identity(dimension);
         assert!(!F2Matrix::composed_eq_zero(

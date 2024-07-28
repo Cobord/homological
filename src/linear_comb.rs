@@ -1,5 +1,5 @@
+use core::ops::{Add, Mul, MulAssign, Neg, Sub};
 use num::traits::One;
-use std::ops::{Add, Mul, Neg, Sub};
 
 pub trait Commutative: Mul<Output = Self> + Sized {}
 
@@ -66,6 +66,18 @@ where
     }
 }
 
+impl<N, T> MulAssign<N> for LazyLinear<N, T>
+where
+    N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + Commutative + Clone + 'static,
+    T: 'static,
+{
+    fn mul_assign(&mut self, rhs: N) {
+        let mut dummy_summands: Box<dyn Iterator<Item = (N, T)>> = Box::new([].into_iter());
+        core::mem::swap(&mut dummy_summands, &mut self.summands);
+        self.summands = Box::new(dummy_summands.map(move |(z0, z1)| (z0 * rhs.clone(), z1)));
+    }
+}
+
 impl<N, T> From<(N, T)> for LazyLinear<N, T>
 where
     N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + Commutative + 'static,
@@ -96,7 +108,6 @@ where
     fn two_summand_mul(self, rhs: T2) -> LazyLinear<N, Self>;
 }
 
-#[allow(dead_code)]
 impl<N, T, T2> Mul<LazyLinear<N, T2>> for LazyLinear<N, T>
 where
     N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + Commutative + Clone + 'static,
