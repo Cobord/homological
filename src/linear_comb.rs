@@ -7,7 +7,7 @@ pub struct LazyLinear<N, T>
 where
     N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + Commutative,
 {
-    summands: Box<dyn Iterator<Item = (N, T)>>,
+    pub(crate) summands: Box<dyn Iterator<Item = (N, T)>>,
 }
 
 impl<N, T> Add for LazyLinear<N, T>

@@ -7,6 +7,7 @@ pub(crate) type BasisIndexing = usize;
 
 pub trait LeftMultipliesBy<T>: Sized {
     fn left_multiply(&mut self, _left_factor: &T);
+    fn zero_out(&mut self);
 }
 
 pub trait MatrixStore<F: Ring>:

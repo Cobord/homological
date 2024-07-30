@@ -1,7 +1,8 @@
 use core::marker::PhantomData;
+use std::collections::VecDeque;
 
 use crate::field_generals::Ring;
-use crate::matrix_store::{BasisIndexing, MatrixStore};
+use crate::matrix_store::{BasisIndexing, LeftMultipliesBy, MatrixStore};
 
 mod private {
     pub trait Sealed {}
@@ -189,27 +190,52 @@ where
         Ok(())
     }
 
-    #[allow(dead_code)]
-    fn apply_all_differentials(
+    pub(crate) fn apply_all_differentials(
         &self,
         starting_index: HomologicalIndexing,
-        _vectors: &mut Vec<M::ColumnVector>,
+        vectors: &mut VecDeque<M::ColumnVector>,
     ) {
-        if starting_index > self.homological_index {
+        if starting_index == self.homological_index {
+            if let Some(v0) = vectors.front_mut() {
+                v0.left_multiply(&self.differential);
+                let put_back = vectors.pop_front().expect("Already know nonempty");
+                let next_index = self.homological_index + if R::differential_increases() {1} else {-1};
+                if let Some(real_rest) = &self.rest {
+                    real_rest.apply_all_differentials(next_index, vectors);
+                } else {
+                    for v in vectors.iter_mut() {
+                        v.zero_out();
+                    }
+                }
+                vectors.push_front(put_back);
+            }
+            return;
+        }
+        let vectors_deeper_in = if R::differential_increases() {
+            starting_index > self.homological_index
+        } else {
+            starting_index < self.homological_index
+        };
+        if vectors_deeper_in {
             if let Some(real_rest) = &self.rest {
-                let next_index =
-                    self.homological_index + if R::differential_increases() { 1 } else { -1 };
-                real_rest.apply_all_differentials(next_index, _vectors);
+                real_rest.apply_all_differentials(starting_index, vectors);
                 return;
             } else {
-                todo!()
+                for v in vectors {
+                    v.zero_out();
+                }
+                return;
             }
         }
-        if starting_index == self.homological_index {
-            todo!()
-        }
-        if starting_index < self.homological_index {
-            todo!()
+        if !vectors_deeper_in {
+            if let Some(v0) = vectors.front_mut() {
+                v0.zero_out();
+                let put_back = vectors.pop_front().expect("Already know nonempty");
+                let next_index = starting_index + if R::differential_increases() {1} else {-1};
+                self.apply_all_differentials(next_index, vectors);
+                vectors.push_front(put_back);
+            }
+            return;
         }
     }
 }

@@ -158,6 +158,13 @@ impl LeftMultipliesBy<F2Matrix> for F2ColumnVec {
     fn left_multiply(&mut self, _left_factor: &F2Matrix) {
         todo!()
     }
+    
+    fn zero_out(&mut self) {
+        let new_vec = BitVec::repeat(false, 0);
+        *self = F2ColumnVec((0,new_vec));
+    }
+
+    
 }
 
 impl MulAssign<F2> for F2Matrix {

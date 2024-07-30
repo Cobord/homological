@@ -75,6 +75,10 @@ impl<F: Ring + Clone, M: MatrixStore<F>> LeftMultipliesBy<FactorizedMatrix<F, M>
         let left_invertible = Into::<M>::into(left_factor.left_invertible.clone());
         self.left_multiply(&left_invertible);
     }
+    
+    fn zero_out(&mut self) {
+        self.zero_out();
+    }
 }
 
 impl<F, M> MulAssign<F> for FactorizedMatrix<F, M>
