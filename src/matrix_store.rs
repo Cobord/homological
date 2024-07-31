@@ -1,19 +1,31 @@
-use core::ops::{Add, Mul, MulAssign};
+use core::ops::{Add, AddAssign, Mul, MulAssign, Neg};
 
 use crate::elementary_matrix::ElementaryMatrixProduct;
 use crate::field_generals::Ring;
+use crate::linear_comb::LazyLinear;
 
 pub(crate) type BasisIndexing = usize;
 
 pub trait LeftMultipliesBy<T>: Sized {
-    fn left_multiply(&mut self, _left_factor: &T);
-    fn zero_out(&mut self);
+    fn left_multiply(&mut self, left_factor: &T);
+    fn zero_out(&mut self, keep_length: bool);
+    fn zero_pad(&mut self, how_much: BasisIndexing);
 }
 
-pub trait MatrixStore<F: Ring>:
+pub trait ReadEntries<N>
+where
+    N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + Clone,
+{
+    fn make_entries(&self) -> LazyLinear<N, BasisIndexing>;
+}
+
+pub trait MatrixStore<F: Ring + Clone>:
     Add<Output = Self> + Mul<Output = Self> + MulAssign<F> + Sized + From<ElementaryMatrixProduct<F>>
 {
-    type ColumnVector: LeftMultipliesBy<Self> + From<(BasisIndexing, Vec<(F, BasisIndexing)>)>;
+    type ColumnVector: LeftMultipliesBy<Self>
+        + From<(BasisIndexing, Vec<(F, BasisIndexing)>)>
+        + ReadEntries<F>
+        + AddAssign<(F, BasisIndexing)>;
     fn zero_matrix(rows: BasisIndexing, cols: BasisIndexing) -> Self;
     fn identity(dimension: BasisIndexing) -> Self;
     fn num_rows(&self) -> BasisIndexing;

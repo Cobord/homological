@@ -23,8 +23,47 @@ impl<F: Ring + Clone> Clone for ElementaryMatrix<F> {
 }
 
 impl<F: Ring> ElementaryMatrix<F> {
-    fn commutes(&self, _other: &Self) -> bool {
-        todo!()
+    fn support(&self) -> Vec<usize> {
+        match self {
+            ElementaryMatrix::SwapRows(arg0, arg1) => vec![*arg0, *arg1],
+            ElementaryMatrix::AddAssignRow(arg0, arg1) => vec![*arg0, *arg1],
+            ElementaryMatrix::ScaleRow(arg0, _) => vec![*arg0],
+        }
+    }
+
+    fn commutes(&self, other: &Self) -> bool {
+        let support_self = self.support();
+        let support_other = other.support();
+        if support_self
+            .iter()
+            .any(|in_self| support_other.contains(in_self))
+        {
+            match self {
+                ElementaryMatrix::SwapRows(arg0, arg1) => {
+                    return *other == ElementaryMatrix::SwapRows(*arg0, *arg1)
+                        || *other == ElementaryMatrix::SwapRows(*arg1, *arg0);
+                }
+                ElementaryMatrix::AddAssignRow(arg0, arg1) => {
+                    return match other {
+                        ElementaryMatrix::SwapRows(_, _) => false,
+                        ElementaryMatrix::AddAssignRow(arg2, _arg3) if arg2 == arg1 => false,
+                        ElementaryMatrix::AddAssignRow(_arg2, arg3) if arg0 == arg3 => false,
+                        ElementaryMatrix::AddAssignRow(arg2, _arg3) if arg2 == arg0 => true,
+                        ElementaryMatrix::AddAssignRow(_arg2, arg3) if arg1 == arg3 => true,
+                        ElementaryMatrix::AddAssignRow(_arg2, _arg3) => true,
+                        ElementaryMatrix::ScaleRow(_, _) => false,
+                    };
+                }
+                ElementaryMatrix::ScaleRow(_, _) => {
+                    return match other {
+                        ElementaryMatrix::ScaleRow(_, _) => true,
+                        ElementaryMatrix::SwapRows(_, _) => false,
+                        ElementaryMatrix::AddAssignRow(_, _) => false,
+                    };
+                }
+            }
+        }
+        true
     }
 
     fn transpose(self) -> Self {
@@ -39,8 +78,17 @@ impl<F: Ring> ElementaryMatrix<F> {
 
     fn try_inverse(self) -> Option<Vec<Self>> {
         match self {
-            ElementaryMatrix::SwapRows(_, _) => todo!(),
-            ElementaryMatrix::AddAssignRow(_, _) => todo!(),
+            ElementaryMatrix::SwapRows(arg0, arg1) => {
+                Some(vec![ElementaryMatrix::SwapRows(arg0, arg1)])
+            }
+            ElementaryMatrix::AddAssignRow(arg0, arg1) => {
+                let neg_one = -F::one();
+                let first_step = ElementaryMatrix::ScaleRow(arg0, neg_one);
+                let second_step = ElementaryMatrix::AddAssignRow(arg0, arg1);
+                let neg_one = -F::one();
+                let third_step = ElementaryMatrix::ScaleRow(arg0, neg_one);
+                Some(vec![first_step, second_step, third_step])
+            }
             ElementaryMatrix::ScaleRow(arg0, arg1) => {
                 let arg1_inverse = arg1.try_inverse()?;
                 Some(vec![ElementaryMatrix::ScaleRow(arg0, arg1_inverse)])
@@ -51,14 +99,7 @@ impl<F: Ring> ElementaryMatrix<F> {
 
 impl<F: Field> ElementaryMatrix<F> {
     fn inverse(self) -> Vec<Self> {
-        match self {
-            ElementaryMatrix::SwapRows(_, _) => todo!(),
-            ElementaryMatrix::AddAssignRow(_, _) => todo!(),
-            ElementaryMatrix::ScaleRow(arg0, arg1) => {
-                let arg1_inverse = F::one() / arg1;
-                vec![ElementaryMatrix::ScaleRow(arg0, arg1_inverse)]
-            }
-        }
+        self.try_inverse().unwrap()
     }
 }
 

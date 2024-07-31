@@ -5,14 +5,45 @@ pub trait Commutative: Mul<Output = Self> + Sized {}
 
 pub struct LazyLinear<N, T>
 where
-    N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + Commutative,
+    N: Add<Output = N> + Neg<Output = N> + Mul<Output = N>,
 {
     pub(crate) summands: Box<dyn Iterator<Item = (N, T)>>,
 }
 
+impl<N, T> LazyLinear<N, T>
+where
+    N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + 'static,
+    T: 'static,
+{
+    pub fn new() -> Self {
+        LazyLinear::<_, _> {
+            summands: Box::new(vec![].into_iter()),
+        }
+    }
+
+    pub fn map<T2>(self, f: impl Fn(T) -> T2 + 'static) -> LazyLinear<N, T2>
+    where
+        T2: 'static,
+    {
+        LazyLinear::<_, _> {
+            summands: Box::new(self.summands.map(move |(z0, z1)| (z0, f(z1)))),
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn change_coeffs<N2>(self, f: impl Fn(N) -> N2 + 'static) -> LazyLinear<N2, T>
+    where
+        N2: Add<Output = N2> + Neg<Output = N2> + Mul<Output = N2> + 'static,
+    {
+        LazyLinear::<_, _> {
+            summands: Box::new(self.summands.map(move |(z0, z1)| (f(z0), z1))),
+        }
+    }
+}
+
 impl<N, T> Add for LazyLinear<N, T>
 where
-    N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + Commutative + 'static,
+    N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + 'static,
     T: 'static,
 {
     type Output = Self;
@@ -26,7 +57,7 @@ where
 
 impl<N, T> Neg for LazyLinear<N, T>
 where
-    N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + Commutative + 'static,
+    N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + 'static,
     T: 'static,
 {
     type Output = Self;
@@ -40,7 +71,7 @@ where
 
 impl<N, T> Sub for LazyLinear<N, T>
 where
-    N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + Commutative + 'static,
+    N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + 'static,
     T: 'static,
 {
     type Output = Self;
@@ -54,7 +85,7 @@ where
 
 impl<N, T> Mul<N> for LazyLinear<N, T>
 where
-    N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + Commutative + Clone + 'static,
+    N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + Clone + 'static,
     T: 'static,
 {
     type Output = Self;
@@ -68,7 +99,7 @@ where
 
 impl<N, T> MulAssign<N> for LazyLinear<N, T>
 where
-    N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + Commutative + Clone + 'static,
+    N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + Clone + 'static,
     T: 'static,
 {
     fn mul_assign(&mut self, rhs: N) {
@@ -80,7 +111,7 @@ where
 
 impl<N, T> From<(N, T)> for LazyLinear<N, T>
 where
-    N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + Commutative + 'static,
+    N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + 'static,
     T: 'static,
 {
     fn from(value: (N, T)) -> Self {
@@ -92,7 +123,7 @@ where
 
 impl<N, T> From<T> for LazyLinear<N, T>
 where
-    N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + Commutative + 'static + One,
+    N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + 'static + One,
     T: 'static,
 {
     fn from(value: T) -> Self {
@@ -102,7 +133,7 @@ where
 
 pub trait TermMultiplier<N, T2 = Self>
 where
-    N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + Commutative + 'static,
+    N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + 'static,
     Self: Sized,
 {
     fn two_summand_mul(self, rhs: T2) -> LazyLinear<N, Self>;
@@ -110,7 +141,7 @@ where
 
 impl<N, T, T2> Mul<LazyLinear<N, T2>> for LazyLinear<N, T>
 where
-    N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + Commutative + Clone + 'static,
+    N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + Clone + 'static,
     T: 'static + TermMultiplier<N, T2> + Clone,
     T2: 'static + TermMultiplier<N, T2> + Clone,
 {

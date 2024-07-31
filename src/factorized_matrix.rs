@@ -4,13 +4,13 @@ use crate::elementary_matrix::{ElementaryMatrix, ElementaryMatrixProduct};
 use crate::field_generals::Ring;
 use crate::matrix_store::{BasisIndexing, LeftMultipliesBy, MatrixStore};
 
-pub struct FactorizedMatrix<F: Ring, M: MatrixStore<F>> {
+pub struct FactorizedMatrix<F: Ring + Clone + 'static, M: MatrixStore<F>> {
     left_invertible: ElementaryMatrixProduct<F>,
     middle: M,
     right_invertible: ElementaryMatrixProduct<F>,
 }
 
-impl<F: Ring, M: MatrixStore<F>> Add for FactorizedMatrix<F, M> {
+impl<F: Ring + Clone, M: MatrixStore<F>> Add for FactorizedMatrix<F, M> {
     type Output = Self;
 
     fn add(mut self, mut rhs: Self) -> Self::Output {
@@ -39,7 +39,7 @@ impl<F: Ring, M: MatrixStore<F>> Add for FactorizedMatrix<F, M> {
         }
     }
 }
-impl<F: Ring, M: MatrixStore<F>> Mul for FactorizedMatrix<F, M> {
+impl<F: Ring + Clone, M: MatrixStore<F>> Mul for FactorizedMatrix<F, M> {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self::Output {
@@ -54,7 +54,9 @@ impl<F: Ring, M: MatrixStore<F>> Mul for FactorizedMatrix<F, M> {
         }
     }
 }
-impl<F: Ring, M: MatrixStore<F>> From<ElementaryMatrixProduct<F>> for FactorizedMatrix<F, M> {
+impl<F: Ring + Clone, M: MatrixStore<F>> From<ElementaryMatrixProduct<F>>
+    for FactorizedMatrix<F, M>
+{
     fn from(left_invertible: ElementaryMatrixProduct<F>) -> Self {
         let dimension = left_invertible.dimension;
         Self {
@@ -75,9 +77,13 @@ impl<F: Ring + Clone, M: MatrixStore<F>> LeftMultipliesBy<FactorizedMatrix<F, M>
         let left_invertible = Into::<M>::into(left_factor.left_invertible.clone());
         self.left_multiply(&left_invertible);
     }
-    
-    fn zero_out(&mut self) {
-        self.zero_out();
+
+    fn zero_out(&mut self, keep_length: bool) {
+        self.zero_out(keep_length);
+    }
+
+    fn zero_pad(&mut self, how_much: BasisIndexing) {
+        self.zero_pad(how_much)
     }
 }
 

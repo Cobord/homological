@@ -30,7 +30,7 @@ impl HomSigns for CohomologicalIndex {
 
 pub(crate) type HomologicalIndexing = i64;
 
-pub struct ChainFVect<R: HomSigns, F: Ring, M: MatrixStore<F>> {
+pub struct ChainFVect<R: HomSigns, F: Ring + Clone, M: MatrixStore<F>> {
     homological_index: HomologicalIndexing,
     dimension: BasisIndexing,
     differential: M,
@@ -42,7 +42,7 @@ pub struct ChainFVect<R: HomSigns, F: Ring, M: MatrixStore<F>> {
 impl<R, F, M> ChainFVect<R, F, M>
 where
     R: HomSigns,
-    F: Ring,
+    F: Ring + Clone,
     M: MatrixStore<F>,
 {
     pub fn concentrated_in_0(dimension: BasisIndexing) -> Self {
@@ -199,12 +199,13 @@ where
             if let Some(v0) = vectors.front_mut() {
                 v0.left_multiply(&self.differential);
                 let put_back = vectors.pop_front().expect("Already know nonempty");
-                let next_index = self.homological_index + if R::differential_increases() {1} else {-1};
+                let next_index =
+                    self.homological_index + if R::differential_increases() { 1 } else { -1 };
                 if let Some(real_rest) = &self.rest {
                     real_rest.apply_all_differentials(next_index, vectors);
                 } else {
                     for v in vectors.iter_mut() {
-                        v.zero_out();
+                        v.zero_out(false);
                     }
                 }
                 vectors.push_front(put_back);
@@ -219,30 +220,36 @@ where
         if vectors_deeper_in {
             if let Some(real_rest) = &self.rest {
                 real_rest.apply_all_differentials(starting_index, vectors);
-                return;
             } else {
                 for v in vectors {
-                    v.zero_out();
+                    v.zero_out(false);
                 }
-                return;
             }
+            return;
         }
         if !vectors_deeper_in {
+            let next_is_start = if R::differential_increases() {
+                self.homological_index - starting_index == 1
+            } else {
+                starting_index - self.homological_index == 1
+            };
             if let Some(v0) = vectors.front_mut() {
-                v0.zero_out();
+                v0.zero_out(false);
+                if next_is_start {
+                    v0.zero_pad(self.dimension);
+                }
                 let put_back = vectors.pop_front().expect("Already know nonempty");
-                let next_index = starting_index + if R::differential_increases() {1} else {-1};
+                let next_index = starting_index + if R::differential_increases() { 1 } else { -1 };
                 self.apply_all_differentials(next_index, vectors);
                 vectors.push_front(put_back);
             }
-            return;
         }
     }
 }
 
 impl<F, M> ChainFVect<CohomologicalIndex, F, M>
 where
-    F: Ring,
+    F: Ring + Clone,
     M: MatrixStore<F>,
 {
     #[allow(dead_code)]
@@ -262,7 +269,7 @@ where
 
 impl<F, M> ChainFVect<HomologicalIndex, F, M>
 where
-    F: Ring,
+    F: Ring + Clone,
     M: MatrixStore<F>,
 {
     #[allow(dead_code)]

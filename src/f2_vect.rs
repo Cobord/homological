@@ -1,11 +1,12 @@
 use core::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub};
 
+use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
 
 use crate::elementary_matrix::{ElementaryMatrix, ElementaryMatrixProduct};
 use crate::field_generals::{Field, Ring};
-use crate::linear_comb::Commutative;
-use crate::matrix_store::{BasisIndexing, LeftMultipliesBy, MatrixStore};
+use crate::linear_comb::{Commutative, LazyLinear};
+use crate::matrix_store::{BasisIndexing, LeftMultipliesBy, MatrixStore, ReadEntries};
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 #[repr(transparent)]
@@ -158,13 +159,19 @@ impl LeftMultipliesBy<F2Matrix> for F2ColumnVec {
     fn left_multiply(&mut self, _left_factor: &F2Matrix) {
         todo!()
     }
-    
-    fn zero_out(&mut self) {
-        let new_vec = BitVec::repeat(false, 0);
-        *self = F2ColumnVec((0,new_vec));
+
+    fn zero_out(&mut self, keep_length: bool) {
+        let new_len = if keep_length { self.0 .0 } else { 0 };
+        let new_vec = BitVec::repeat(false, new_len);
+        *self = F2ColumnVec((0, new_vec));
     }
 
-    
+    fn zero_pad(&mut self, how_much: BasisIndexing) {
+        self.0 .0 += how_much;
+        self.0
+             .1
+            .extend_from_bitslice(&BitVec::<usize, Lsb0>::repeat(false, how_much));
+    }
 }
 
 impl MulAssign<F2> for F2Matrix {
@@ -180,8 +187,55 @@ impl MulAssign<F2> for F2Matrix {
 pub struct F2ColumnVec((BasisIndexing, BitVec));
 
 impl From<(BasisIndexing, Vec<(F2, BasisIndexing)>)> for F2ColumnVec {
-    fn from(_value: (BasisIndexing, Vec<(F2, BasisIndexing)>)) -> Self {
-        todo!()
+    fn from((overall_dimension, entries): (BasisIndexing, Vec<(F2, BasisIndexing)>)) -> Self {
+        let mut entries_bitvec = BitVec::repeat(false, overall_dimension);
+        for (r0, r1) in entries {
+            if r0.0 {
+                let my_index = r1 % overall_dimension;
+                let old_value = entries_bitvec
+                    .get(my_index)
+                    .as_deref()
+                    .cloned()
+                    .unwrap_or(false);
+                entries_bitvec.set(my_index, !old_value)
+            }
+        }
+        Self((overall_dimension, entries_bitvec))
+    }
+}
+
+impl ReadEntries<F2> for F2ColumnVec
+where
+    F2: 'static,
+{
+    fn make_entries(&self) -> LazyLinear<F2, BasisIndexing> {
+        let overall_dimension = self.0 .0;
+        let self_bit_vec = self.0 .1.clone();
+        let my_iterator = (0..overall_dimension).filter_map(move |idx| {
+            if self_bit_vec
+                .get(idx % overall_dimension)
+                .as_deref()
+                .cloned()
+                .unwrap_or(false)
+            {
+                Some((F2::one(), idx))
+            } else {
+                None
+            }
+        });
+        LazyLinear::<_, _> {
+            summands: Box::new(my_iterator),
+        }
+    }
+}
+
+impl AddAssign<(F2, BasisIndexing)> for F2ColumnVec {
+    fn add_assign(&mut self, rhs: (F2, BasisIndexing)) {
+        if rhs.0 .0 {
+            let my_index = rhs.1 % self.0 .0;
+            let old_value = self.0 .1.get(my_index).as_deref().cloned().unwrap_or(false);
+            self.0 .1.set(my_index, !old_value)
+        }
     }
 }
 
