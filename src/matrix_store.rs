@@ -20,7 +20,12 @@ where
 }
 
 pub trait MatrixStore<F: Ring + Clone>:
-    Add<Output = Self> + Mul<Output = Self> + MulAssign<F> + Sized + From<ElementaryMatrixProduct<F>>
+    Add<Output = Self>
+    + Mul<Output = Self>
+    + Mul<F>
+    + MulAssign<F>
+    + Sized
+    + From<ElementaryMatrixProduct<F>>
 {
     type ColumnVector: LeftMultipliesBy<Self>
         + From<(BasisIndexing, Vec<(F, BasisIndexing)>)>

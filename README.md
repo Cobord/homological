@@ -34,6 +34,8 @@ LazyLinear<N,T> and LazyLinear<N,T2> where the former is the module for the late
 
 # F2 Vect
 
+uses bitvec to cram entries together
+
 # Chain Complex
 
 # DG Algebra

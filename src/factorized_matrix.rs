@@ -115,6 +115,19 @@ where
     }
 }
 
+impl<F, M> Mul<F> for FactorizedMatrix<F, M>
+where
+    F: Ring + Clone,
+    M: MatrixStore<F>,
+{
+    type Output = Self;
+
+    fn mul(mut self, rhs: F) -> Self::Output {
+        self *= rhs;
+        self
+    }
+}
+
 impl<F: Ring + Clone, M: MatrixStore<F> + Clone> MatrixStore<F> for FactorizedMatrix<F, M> {
     type ColumnVector = M::ColumnVector;
 

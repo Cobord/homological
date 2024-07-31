@@ -10,6 +10,7 @@ use crate::matrix_store::{BasisIndexing, MatrixStore, ReadEntries};
 #[allow(dead_code)]
 pub trait AlgebraStore<F: Field>:
     MulAssign<F>
+    + Mul<F>
     + Mul<Output = Self>
     + Add<Output = Self>
     + Sub<Output = Self>
@@ -129,7 +130,7 @@ where
             summands: Box::new(vec![].into_iter()),
         };
         for term in all_vecs.into_iter() {
-            new_elt_basis = new_elt_basis + term.make_entries().map(move |x| (hom_index, x));
+            new_elt_basis += term.make_entries().map(move |x| (hom_index, x));
             new_elt = new_elt + (hom_index, term).into();
             hom_index += direction;
         }
@@ -148,6 +149,29 @@ where
     fn mul_assign(&mut self, rhs: F) {
         self.elt *= rhs.clone();
         self.elt_basis *= rhs;
+    }
+}
+
+impl<R, F, M, A> Mul<F> for DGAlgebra<R, F, M, A>
+where
+    R: HomSigns,
+    F: Field + Clone + 'static,
+    M: MatrixStore<F>,
+    A: AlgebraStore<F> + From<(HomologicalIndexing, M::ColumnVector)>,
+{
+    type Output = Self;
+
+    fn mul(self, rhs: F) -> Self::Output {
+        let mut new_elt = self.elt;
+        new_elt *= rhs.clone();
+        let mut new_elt_basis = self.elt_basis;
+        new_elt_basis *= rhs;
+        Self {
+            underlying_chain: self.underlying_chain,
+            elt: new_elt,
+            elt_basis: new_elt_basis,
+            two_summand_mul: self.two_summand_mul,
+        }
     }
 }
 

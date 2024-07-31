@@ -1,4 +1,4 @@
-use core::ops::{Add, Mul, MulAssign, Neg, Sub};
+use core::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use num::traits::One;
 
 pub trait Commutative: Mul<Output = Self> + Sized {}
@@ -55,6 +55,18 @@ where
     }
 }
 
+impl<N, T> AddAssign for LazyLinear<N, T>
+where
+    N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + 'static,
+    T: 'static,
+{
+    fn add_assign(&mut self, rhs: Self) {
+        let mut dummy_summands: Box<dyn Iterator<Item = (N, T)>> = Box::new([].into_iter());
+        core::mem::swap(&mut dummy_summands, &mut self.summands);
+        self.summands = Box::new(dummy_summands.chain(rhs.summands));
+    }
+}
+
 impl<N, T> Neg for LazyLinear<N, T>
 where
     N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + 'static,
@@ -80,6 +92,18 @@ where
         Self {
             summands: Box::new(self.summands.chain(rhs.summands.map(|(z0, z1)| (-z0, z1)))),
         }
+    }
+}
+
+impl<N, T> SubAssign for LazyLinear<N, T>
+where
+    N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + 'static,
+    T: 'static,
+{
+    fn sub_assign(&mut self, rhs: Self) {
+        let mut dummy_summands: Box<dyn Iterator<Item = (N, T)>> = Box::new([].into_iter());
+        core::mem::swap(&mut dummy_summands, &mut self.summands);
+        self.summands = Box::new(dummy_summands.chain(rhs.summands.map(|(z0, z1)| (-z0, z1))));
     }
 }
 

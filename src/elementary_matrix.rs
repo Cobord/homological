@@ -248,7 +248,7 @@ impl<F: Field> ElementaryMatrixProduct<F> {
 
 impl<F: Field + Clone> DivAssign for ElementaryMatrixProduct<F> {
     fn div_assign(&mut self, rhs: Self) {
-        let inverse_rhs = rhs.steps.into_iter().flat_map(|z| z.inverse()).rev();
+        let inverse_rhs = rhs.steps.into_iter().rev().flat_map(|z| z.inverse());
         self.steps.extend(inverse_rhs);
     }
 }

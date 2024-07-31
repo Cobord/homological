@@ -183,6 +183,16 @@ impl MulAssign<F2> for F2Matrix {
     }
 }
 
+impl Mul<F2> for F2Matrix {
+    type Output = Self;
+    fn mul(self, rhs: F2) -> Self::Output {
+        match rhs.0 {
+            true => self,
+            false => Self::new(self.rows, self.cols, None),
+        }
+    }
+}
+
 #[repr(transparent)]
 pub struct F2ColumnVec((BasisIndexing, BitVec));
 

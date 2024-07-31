@@ -35,10 +35,10 @@ pub trait Field: Ring + Div<Output = Self> + Commutative {
     #[allow(dead_code)]
     fn try_inverse(self) -> Option<Self> {
         let zero_f = Self::from(0);
-        if self==zero_f {
+        if self == zero_f {
             None
         } else {
-            Some(Self::one()/self)
+            Some(Self::one() / self)
         }
     }
 }
