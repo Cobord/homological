@@ -27,15 +27,11 @@ where
         let mut new_middle = M::zero_matrix(self.middle.num_rows(), self.middle.num_cols());
         core::mem::swap(&mut new_middle, &mut self.middle);
         let new_middle_canonical = new_middle.canonicalize();
-        self.left_invertible
-            .steps
-            .extend(new_middle_canonical.left_invertible.steps);
+        self.left_invertible *= new_middle_canonical.left_invertible;
         self.middle = new_middle_canonical.middle;
         let mut new_right_invertible = new_middle_canonical.right_invertible;
         core::mem::swap(&mut new_right_invertible, &mut self.right_invertible);
-        self.right_invertible
-            .steps
-            .extend(new_right_invertible.steps);
+        self.right_invertible *= new_right_invertible;
     }
 }
 
