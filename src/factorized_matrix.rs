@@ -10,6 +10,14 @@ pub struct FactorizedMatrix<F: Ring + Clone + 'static, M: MatrixStore<F>> {
     right_invertible: ElementaryMatrixProduct<F>,
 }
 
+pub trait Canonicalizable<F> : MatrixStore<F>
+where
+    F: Ring + Clone + 'static,
+{
+    #[allow(dead_code)]
+    fn canonicalize(self) -> FactorizedMatrix<F, Self>;
+}
+
 impl<F: Ring + Clone, M: MatrixStore<F>> Add for FactorizedMatrix<F, M> {
     type Output = Self;
 
@@ -168,9 +176,9 @@ impl<F: Ring + Clone, M: MatrixStore<F> + Clone> MatrixStore<F> for FactorizedMa
 
     fn transpose(self) -> Self {
         Self {
-            left_invertible: self.left_invertible.transpose(),
+            left_invertible: self.right_invertible.transpose(),
             middle: self.middle.transpose(),
-            right_invertible: self.right_invertible.transpose(),
+            right_invertible: self.left_invertible.transpose(),
         }
     }
 

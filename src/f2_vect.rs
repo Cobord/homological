@@ -4,6 +4,7 @@ use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
 
 use crate::elementary_matrix::{ElementaryMatrix, ElementaryMatrixProduct};
+use crate::factorized_matrix::{Canonicalizable, FactorizedMatrix};
 use crate::field_generals::{Field, Ring};
 use crate::linear_comb::{Commutative, LazyLinear};
 use crate::matrix_store::{BasisIndexing, LeftMultipliesBy, MatrixStore, ReadEntries};
@@ -393,6 +394,14 @@ impl F2Matrix {
         for row in &self.data {
             println!("{:?}", row);
         }
+    }
+
+}
+
+impl Canonicalizable<F2> for F2Matrix {
+    #[allow(unused_mut)]
+    fn canonicalize(mut self) -> FactorizedMatrix<F2, Self> {
+        todo!();
     }
 }
 
