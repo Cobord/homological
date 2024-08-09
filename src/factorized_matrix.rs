@@ -10,12 +10,33 @@ pub struct FactorizedMatrix<F: Ring + Clone + 'static, M: MatrixStore<F>> {
     right_invertible: ElementaryMatrixProduct<F>,
 }
 
-pub trait Canonicalizable<F> : MatrixStore<F>
+pub trait Canonicalizable<F>: MatrixStore<F>
 where
     F: Ring + Clone + 'static,
 {
-    #[allow(dead_code)]
     fn canonicalize(self) -> FactorizedMatrix<F, Self>;
+}
+
+impl<F, M> FactorizedMatrix<F, M>
+where
+    F: Ring + Clone,
+    M: MatrixStore<F> + Canonicalizable<F>,
+{
+    #[allow(dead_code)]
+    fn recanonicalize(&mut self) {
+        let mut new_middle = M::zero_matrix(self.middle.num_rows(), self.middle.num_cols());
+        core::mem::swap(&mut new_middle, &mut self.middle);
+        let new_middle_canonical = new_middle.canonicalize();
+        self.left_invertible
+            .steps
+            .extend(new_middle_canonical.left_invertible.steps);
+        self.middle = new_middle_canonical.middle;
+        let mut new_right_invertible = new_middle_canonical.right_invertible;
+        core::mem::swap(&mut new_right_invertible, &mut self.right_invertible);
+        self.right_invertible
+            .steps
+            .extend(new_right_invertible.steps);
+    }
 }
 
 impl<F: Ring + Clone, M: MatrixStore<F>> Add for FactorizedMatrix<F, M> {

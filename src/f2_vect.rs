@@ -395,7 +395,6 @@ impl F2Matrix {
             println!("{:?}", row);
         }
     }
-
 }
 
 impl Canonicalizable<F2> for F2Matrix {
