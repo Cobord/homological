@@ -151,7 +151,7 @@ impl<F: Ring> ElementaryMatrixProduct<F> {
             if self.steps[0] == other.steps[0] {
                 let z = self.steps.pop_front().expect("Already checked emptiness");
                 let w = other.steps.pop_front().expect("Already checked emptiness");
-                assert!(z == w);
+                assert!(z == w, "Already checked equality");
                 extracted_out_so_far.steps.push_back(z);
                 return self.extract_common_prefix(other, extracted_out_so_far);
             }
@@ -189,7 +189,7 @@ impl<F: Ring> ElementaryMatrixProduct<F> {
             {
                 let z = self.steps.pop_back().expect("Already checked emptiness");
                 let w = other.steps.pop_back().expect("Already checked emptiness");
-                assert!(z == w);
+                assert!(z == w, "Already checked equality");
                 extracted_out_so_far.steps.push_front(z);
                 return self.extract_common_prefix(other, extracted_out_so_far);
             }

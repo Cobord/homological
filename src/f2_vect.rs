@@ -157,14 +157,25 @@ impl From<ElementaryMatrixProduct<F2>> for F2Matrix {
 }
 
 impl LeftMultipliesBy<F2Matrix> for F2ColumnVec {
-    fn left_multiply(&mut self, _left_factor: &F2Matrix) {
-        todo!()
+    fn left_multiply(&mut self, left_factor: &F2Matrix) {
+        let left_factor_rows = left_factor.num_rows();
+        let left_factor_cols = left_factor.num_cols();
+        assert!(left_factor_cols == self.0 .0);
+        let left_transpose = left_factor.clone().transpose();
+        let mut new_result =
+            F2ColumnVec((left_factor_rows, BitVec::repeat(false, left_factor_rows)));
+        for (idx, bit) in self.0 .1.as_bitslice().iter().enumerate() {
+            if *bit {
+                new_result += F2ColumnVec((left_factor_rows, left_transpose.data[idx].clone()));
+            }
+        }
+        *self = new_result;
     }
 
     fn zero_out(&mut self, keep_length: bool) {
         let new_len = if keep_length { self.0 .0 } else { 0 };
         let new_vec = BitVec::repeat(false, new_len);
-        *self = F2ColumnVec((0, new_vec));
+        *self = F2ColumnVec((new_len, new_vec));
     }
 
     fn zero_pad(&mut self, how_much: BasisIndexing) {
@@ -194,6 +205,7 @@ impl Mul<F2> for F2Matrix {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[repr(transparent)]
 pub struct F2ColumnVec((BasisIndexing, BitVec));
 
@@ -247,6 +259,23 @@ impl AddAssign<(F2, BasisIndexing)> for F2ColumnVec {
             let old_value = self.0 .1.get(my_index).as_deref().cloned().unwrap_or(false);
             self.0 .1.set(my_index, !old_value)
         }
+    }
+}
+
+impl AddAssign<F2ColumnVec> for F2ColumnVec {
+    fn add_assign(&mut self, mut rhs: F2ColumnVec) {
+        let mut self_len = self.0 .0;
+        let mut rhs_len = rhs.0 .0;
+        while self_len < rhs_len {
+            self.0 .1.push(false);
+            self_len += 1;
+        }
+        while rhs_len < self_len {
+            rhs.0 .1.push(false);
+            rhs_len += 1;
+        }
+        self.0 .1 ^= rhs.0 .1;
+        self.0 .0 = self_len;
     }
 }
 
@@ -408,9 +437,10 @@ mod test {
 
     #[test]
     fn basic_test() {
-        use super::F2Matrix;
-        use crate::matrix_store::MatrixStore;
+        use super::{F2ColumnVec, F2Matrix};
+        use crate::matrix_store::{LeftMultipliesBy, MatrixStore};
         use bitvec::vec::BitVec;
+
         let mut one_zero = BitVec::new();
         one_zero.insert(0, true);
         one_zero.insert(1, false);
@@ -457,6 +487,31 @@ mod test {
             e.print();
         }
         assert_eq!(e, a_transpose);
+
+        let mut one_zero = BitVec::new();
+        one_zero.insert(0, true);
+        one_zero.insert(1, false);
+        let mut x_axis = F2ColumnVec((2, one_zero));
+        let expected_after_e = x_axis.clone();
+        x_axis.left_multiply(&e);
+        assert_eq!(x_axis, expected_after_e);
+
+        let mut one_one = BitVec::new();
+        one_one.insert(0, true);
+        one_one.insert(1, true);
+        let mut xy_axis = F2ColumnVec((2, one_one));
+
+        let mut zero_one = BitVec::new();
+        zero_one.insert(0, false);
+        zero_one.insert(1, true);
+        let mut y_axis = F2ColumnVec((2, zero_one));
+        let expected_after_e = xy_axis.clone();
+        let fixed_y_axis = y_axis.clone();
+        y_axis.left_multiply(&e);
+        assert_eq!(y_axis, expected_after_e);
+
+        xy_axis.left_multiply(&e);
+        assert_eq!(xy_axis, fixed_y_axis);
     }
 
     #[test]
