@@ -2,7 +2,7 @@ use core::marker::PhantomData;
 use std::collections::VecDeque;
 
 use crate::field_generals::Ring;
-use crate::matrix_store::{BasisIndexing, LeftMultipliesBy, MatrixStore};
+use crate::matrix_store::{BasisIndexing, EffortfulMatrixStore, LeftMultipliesBy};
 
 mod private {
     pub trait Sealed {}
@@ -30,7 +30,7 @@ impl HomSigns for CohomologicalIndex {
 
 pub(crate) type HomologicalIndexing = i64;
 
-pub struct ChainFVect<R: HomSigns, F: Ring + Clone, M: MatrixStore<F>> {
+pub struct ChainFVect<R: HomSigns, F: Ring + Clone, M: EffortfulMatrixStore<F>> {
     homological_index: HomologicalIndexing,
     dimension: BasisIndexing,
     differential: M,
@@ -43,7 +43,7 @@ impl<R, F, M> ChainFVect<R, F, M>
 where
     R: HomSigns,
     F: Ring + Clone,
-    M: MatrixStore<F>,
+    M: EffortfulMatrixStore<F>,
 {
     pub fn concentrated_in_0(dimension: BasisIndexing) -> Self {
         Self {
@@ -250,7 +250,7 @@ where
 impl<F, M> ChainFVect<CohomologicalIndex, F, M>
 where
     F: Ring + Clone,
-    M: MatrixStore<F>,
+    M: EffortfulMatrixStore<F>,
 {
     #[allow(dead_code)]
     pub fn negate_homological_indices(self) -> ChainFVect<HomologicalIndex, F, M> {
@@ -270,7 +270,7 @@ where
 impl<F, M> ChainFVect<HomologicalIndex, F, M>
 where
     F: Ring + Clone,
-    M: MatrixStore<F>,
+    M: EffortfulMatrixStore<F>,
 {
     #[allow(dead_code)]
     pub fn negate_homological_indices(self) -> ChainFVect<CohomologicalIndex, F, M> {

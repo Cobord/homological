@@ -5,7 +5,7 @@ use std::rc::Rc;
 use crate::chain_complex::{ChainFVect, HomSigns, HomologicalIndexing};
 use crate::field_generals::Field;
 use crate::linear_comb::LazyLinear;
-use crate::matrix_store::{BasisIndexing, MatrixStore, ReadEntries};
+use crate::matrix_store::{AsBasisCombination, BasisIndexing, EffortfulMatrixStore, MatrixStore};
 
 #[allow(dead_code)]
 pub trait AlgebraStore<F: Field>:
@@ -30,7 +30,7 @@ type BasisMultiplier<F> = fn(
 pub struct DGAlgebra<
     R: HomSigns,
     F: Field + Clone,
-    M: MatrixStore<F>,
+    M: EffortfulMatrixStore<F>,
     A: AlgebraStore<F> + From<(HomologicalIndexing, M::ColumnVector)>,
 > {
     underlying_chain: Rc<ChainFVect<R, F, M>>,
@@ -43,7 +43,7 @@ impl<R, F, M, A> DGAlgebra<R, F, M, A>
 where
     R: HomSigns,
     F: Field + Clone + 'static,
-    M: MatrixStore<F>,
+    M: EffortfulMatrixStore<F>,
     A: AlgebraStore<F> + From<(HomologicalIndexing, M::ColumnVector)>,
 {
     #[allow(dead_code)]
@@ -143,7 +143,7 @@ impl<R, F, M, A> MulAssign<F> for DGAlgebra<R, F, M, A>
 where
     R: HomSigns,
     F: Field + Clone + 'static,
-    M: MatrixStore<F>,
+    M: EffortfulMatrixStore<F>,
     A: AlgebraStore<F> + From<(HomologicalIndexing, M::ColumnVector)>,
 {
     fn mul_assign(&mut self, rhs: F) {
@@ -156,7 +156,7 @@ impl<R, F, M, A> Mul<F> for DGAlgebra<R, F, M, A>
 where
     R: HomSigns,
     F: Field + Clone + 'static,
-    M: MatrixStore<F>,
+    M: EffortfulMatrixStore<F>,
     A: AlgebraStore<F> + From<(HomologicalIndexing, M::ColumnVector)>,
 {
     type Output = Self;
@@ -179,7 +179,7 @@ impl<R, F, M, A> Add for DGAlgebra<R, F, M, A>
 where
     R: HomSigns,
     F: Field + Clone + 'static,
-    M: MatrixStore<F>,
+    M: EffortfulMatrixStore<F>,
     A: AlgebraStore<F> + From<(HomologicalIndexing, M::ColumnVector)>,
 {
     type Output = Self;
@@ -199,7 +199,7 @@ impl<R, F, M, A> Neg for DGAlgebra<R, F, M, A>
 where
     R: HomSigns,
     F: Field + Clone + 'static,
-    M: MatrixStore<F>,
+    M: EffortfulMatrixStore<F>,
     A: AlgebraStore<F> + From<(HomologicalIndexing, M::ColumnVector)>,
 {
     type Output = Self;
@@ -218,7 +218,7 @@ impl<R, F, M, A> Sub for DGAlgebra<R, F, M, A>
 where
     R: HomSigns,
     F: Field + Clone + 'static,
-    M: MatrixStore<F>,
+    M: EffortfulMatrixStore<F>,
     A: AlgebraStore<F> + From<(HomologicalIndexing, M::ColumnVector)>,
 {
     type Output = Self;
@@ -238,7 +238,7 @@ impl<R, F, M, A> Mul for DGAlgebra<R, F, M, A>
 where
     R: HomSigns,
     F: Field + Clone + 'static,
-    M: MatrixStore<F>,
+    M: EffortfulMatrixStore<F>,
     A: AlgebraStore<F> + From<(HomologicalIndexing, M::ColumnVector)>,
 {
     type Output = Self;

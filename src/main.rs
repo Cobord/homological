@@ -5,6 +5,8 @@ mod field_generals;
 mod elementary_matrix;
 mod matrix_store;
 
+mod array_store;
+
 mod factorized_matrix;
 
 mod chain_complex;

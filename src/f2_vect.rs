@@ -4,12 +4,16 @@ use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
 
 use crate::elementary_matrix::{ElementaryMatrix, ElementaryMatrixProduct};
-use crate::factorized_matrix::{Canonicalizable, FactorizedMatrix};
-use crate::field_generals::{Field, Ring};
+use crate::factorized_matrix::{
+    row_echelon_form, Canonicalizable, FactorizedMatrix, RowReductionHelpers,
+};
+use crate::field_generals::{Field, IntegerType, Ring};
 use crate::linear_comb::{Commutative, LazyLinear};
-use crate::matrix_store::{BasisIndexing, LeftMultipliesBy, MatrixStore, ReadEntries};
+use crate::matrix_store::{
+    AsBasisCombination, BasisIndexing, EffortfulMatrixStore, LeftMultipliesBy, MatrixStore,
+};
 
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone, PartialOrd)]
 #[repr(transparent)]
 pub struct F2(bool);
 
@@ -55,14 +59,14 @@ impl Div for F2 {
     }
 }
 
-impl From<usize> for F2 {
-    fn from(value: usize) -> Self {
+impl From<IntegerType> for F2 {
+    fn from(value: IntegerType) -> Self {
         Self(value % 2 == 0)
     }
 }
 
 impl Ring for F2 {
-    fn characteristic(_primes: Box<dyn Iterator<Item = usize>>) -> usize {
+    fn characteristic(_primes: Box<dyn Iterator<Item = IntegerType>>) -> IntegerType {
         2
     }
 
@@ -140,16 +144,17 @@ impl From<ElementaryMatrixProduct<F2>> for F2Matrix {
         for step in value.steps.into_iter().rev() {
             match step {
                 ElementaryMatrix::SwapRows(row_idx, row_jdx) => {
-                    result.data.swap(row_idx, row_jdx);
+                    result.swap_rows(row_idx, row_jdx);
                 }
                 ElementaryMatrix::AddAssignRow(row_idx, row_jdx) => {
-                    let row_i = result.data[row_idx].clone();
-                    result.data[row_jdx] ^= row_i;
+                    result.add_assign_rows(row_idx, row_jdx);
                 }
-                ElementaryMatrix::ScaleRow(row_idx, factor) => match factor.0 {
-                    true => {}
-                    false => result.data[row_idx] = BitVec::repeat(false, value.dimension),
-                },
+                ElementaryMatrix::ScaleRow(row_idx, factor) => {
+                    result.scale_row(row_idx, factor);
+                }
+                ElementaryMatrix::AddAssignMultipleRow(row_idx, factor, row_jdx) => {
+                    result.add_assign_factor_rows(row_idx, factor, row_jdx);
+                }
             }
         }
         result
@@ -183,6 +188,21 @@ impl LeftMultipliesBy<F2Matrix> for F2ColumnVec {
         self.0
              .1
             .extend_from_bitslice(&BitVec::<usize, Lsb0>::repeat(false, how_much));
+    }
+
+    fn left_multiply_by_triangular(&mut self, _lower_or_upper: bool, _l_or_u_matrix: &F2Matrix) {
+        todo!()
+    }
+
+    fn left_multiply_by_diagonal(&mut self, d_matrix: &F2Matrix) {
+        let (num_rows, num_cols) = d_matrix.dimensions();
+        let min_dimension = core::cmp::min(num_rows, num_cols);
+        for idx in 0..min_dimension {
+            let a_idx_idx = d_matrix.read_entry(idx, idx);
+            if !a_idx_idx.0 {
+                self.0 .1.set(idx, false);
+            }
+        }
     }
 }
 
@@ -227,7 +247,7 @@ impl From<(BasisIndexing, Vec<(F2, BasisIndexing)>)> for F2ColumnVec {
     }
 }
 
-impl ReadEntries<F2> for F2ColumnVec
+impl AsBasisCombination<F2> for F2ColumnVec
 where
     F2: 'static,
 {
@@ -276,6 +296,19 @@ impl AddAssign<F2ColumnVec> for F2ColumnVec {
         }
         self.0 .1 ^= rhs.0 .1;
         self.0 .0 = self_len;
+    }
+}
+
+impl MulAssign<F2> for F2ColumnVec {
+    fn mul_assign(&mut self, rhs: F2) {
+        match rhs.0 {
+            true => {}
+            false => {
+                let new_len = self.0 .0;
+                let new_vec = BitVec::repeat(false, new_len);
+                *self = F2ColumnVec((new_len, new_vec));
+            }
+        }
     }
 }
 
@@ -346,6 +379,19 @@ impl MatrixStore<F2> for F2Matrix {
         to_return
     }
 
+    fn diagonal_only(&self) -> Self {
+        let (num_rows, num_cols) = self.dimensions();
+        let min_dimension = core::cmp::min(num_rows, num_cols);
+        let mut to_return = Self::zero_matrix(num_rows, num_cols);
+        for idx in 0..min_dimension {
+            let a_idx_idx = self.read_entry(idx, idx);
+            to_return.set_entry(idx, idx, a_idx_idx);
+        }
+        to_return
+    }
+}
+
+impl EffortfulMatrixStore<F2> for F2Matrix {
     fn rank(&self) -> BasisIndexing {
         todo!()
     }
@@ -424,16 +470,83 @@ impl F2Matrix {
             println!("{:?}", row);
         }
     }
+
+    #[allow(dead_code)]
+    fn read_row_entries(&self, i: BasisIndexing, js: &[BasisIndexing]) -> Vec<F2> {
+        let relevant_row = self.data[i].clone();
+        js.iter()
+            .map(|j| F2(relevant_row.get(*j).as_deref().cloned().unwrap_or(false)))
+            .collect()
+    }
+}
+
+impl RowReductionHelpers<F2> for F2Matrix {
+    fn swap_rows(&mut self, row_idx: BasisIndexing, row_jdx: BasisIndexing) {
+        self.data.swap(row_idx, row_jdx);
+    }
+
+    fn add_assign_rows(&mut self, row_idx: BasisIndexing, row_jdx: BasisIndexing) {
+        let row_i = self.data[row_idx].clone();
+        self.data[row_jdx] ^= row_i;
+    }
+
+    fn scale_row(&mut self, row_idx: BasisIndexing, factor: F2) {
+        match factor.0 {
+            true => {}
+            false => self.data[row_idx] = BitVec::repeat(false, self.num_cols()),
+        }
+    }
+
+    fn read_entry(&self, row_idx: BasisIndexing, col_idx: BasisIndexing) -> F2 {
+        F2(self.data[row_idx]
+            .get(col_idx)
+            .as_deref()
+            .cloned()
+            .unwrap_or(false))
+    }
+    fn set_entry(&mut self, row_idx: BasisIndexing, col_idx: BasisIndexing, new_value: F2) {
+        match new_value {
+            F2(true) => {
+                self.data[row_idx].set(col_idx, true);
+            }
+            F2(false) => {
+                self.data[row_idx].set(col_idx, false);
+            }
+        }
+    }
+
+    fn add_assign_factor_rows(
+        &mut self,
+        row_idx: BasisIndexing,
+        factor: F2,
+        row_jdx: BasisIndexing,
+    ) {
+        match factor.0 {
+            true => {
+                self.add_assign_rows(row_idx, row_jdx);
+            }
+            false => {}
+        }
+    }
 }
 
 impl Canonicalizable<F2> for F2Matrix {
     #[allow(unused_mut)]
     fn canonicalize(mut self) -> FactorizedMatrix<F2, Self> {
-        todo!();
+        let num_cols = self.num_cols();
+        let (left_invertible, middle) = row_echelon_form(self, false);
+        FactorizedMatrix::<F2, Self> {
+            left_invertible,
+            middle,
+            right_invertible: ElementaryMatrixProduct::new(num_cols),
+        }
     }
 }
 
 mod test {
+
+    #[allow(dead_code)]
+    const DO_PRINT: bool = false;
 
     #[test]
     fn basic_test() {
@@ -451,8 +564,6 @@ mod test {
         zero_one.insert(0, false);
         zero_one.insert(1, true);
 
-        let do_print = false;
-
         // Example usage
         let a = F2Matrix::new(2, 2, Some(vec![one_zero.clone(), one_one.clone()]));
         let a_transpose = F2Matrix::new(2, 2, Some(vec![one_one.clone(), zero_one.clone()]));
@@ -460,7 +571,7 @@ mod test {
         let a_plus_b = F2Matrix::new(2, 2, Some(vec![one_one.clone(), zero_one.clone()]));
         let a_times_b = F2Matrix::new(2, 2, Some(vec![zero_one, one_one]));
 
-        if do_print {
+        if DO_PRINT {
             println!("Matrix A:");
             a.print();
             println!("Matrix B:");
@@ -468,21 +579,21 @@ mod test {
         }
 
         let c = a.add_borrows(&b);
-        if do_print {
+        if DO_PRINT {
             println!("A + B:");
             c.print();
         }
         assert_eq!(c, a_plus_b);
 
         let d = a.multiply_borrows(&b);
-        if do_print {
+        if DO_PRINT {
             println!("A * B:");
             d.print();
         }
         assert_eq!(d, a_times_b);
 
         let e = a.transpose();
-        if do_print {
+        if DO_PRINT {
             println!("Transpose of A:");
             e.print();
         }

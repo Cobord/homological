@@ -2,17 +2,19 @@ use core::ops::{Add, Div, Mul, Neg, Sub};
 
 use crate::linear_comb::Commutative;
 
+pub type IntegerType = i16;
+
 pub trait Ring:
     Add<Output = Self>
     + Sub<Output = Self>
     + Neg<Output = Self>
     + Mul<Output = Self>
-    + Eq
-    + From<usize>
+    + PartialEq
+    + From<IntegerType>
     + Sized
 {
     #[allow(dead_code)]
-    fn characteristic(primes: Box<dyn Iterator<Item = usize>>) -> usize {
+    fn characteristic(primes: Box<dyn Iterator<Item = IntegerType>>) -> IntegerType {
         let zero_f = Self::from(0);
         for i in primes {
             if Self::from(i) == zero_f {

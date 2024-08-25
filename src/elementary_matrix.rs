@@ -2,6 +2,7 @@ use crate::{
     field_generals::{Field, Ring},
     matrix_store::BasisIndexing,
 };
+use core::fmt::Debug;
 use core::ops::{DivAssign, MulAssign};
 use std::collections::VecDeque;
 
@@ -9,7 +10,32 @@ use std::collections::VecDeque;
 pub(crate) enum ElementaryMatrix<F: Ring> {
     SwapRows(BasisIndexing, BasisIndexing),
     AddAssignRow(BasisIndexing, BasisIndexing), // AddAssignRow(x,y) add row x to row y
+    AddAssignMultipleRow(BasisIndexing, F, BasisIndexing), // AddAssignMultipleRow(x,f,y) add row x * f to row y
     ScaleRow(BasisIndexing, F), // not checked by the type that the scaling factor is invertible, but it should be
+}
+
+impl<F: Ring + Debug> Debug for ElementaryMatrix<F> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::SwapRows(arg0, arg1) => {
+                f.debug_tuple("SwapRows").field(arg0).field(arg1).finish()
+            }
+            Self::AddAssignRow(arg0, arg1) => f
+                .debug_tuple("AddAssignRow")
+                .field(arg0)
+                .field(arg1)
+                .finish(),
+            Self::AddAssignMultipleRow(arg0, arg1, arg2) => f
+                .debug_tuple("AddAssignMultipleRow")
+                .field(arg0)
+                .field(arg1)
+                .field(arg2)
+                .finish(),
+            Self::ScaleRow(arg0, arg1) => {
+                f.debug_tuple("ScaleRow").field(arg0).field(arg1).finish()
+            }
+        }
+    }
 }
 
 impl<F: Ring + Clone> Clone for ElementaryMatrix<F> {
@@ -18,6 +44,9 @@ impl<F: Ring + Clone> Clone for ElementaryMatrix<F> {
             Self::SwapRows(arg0, arg1) => Self::SwapRows(*arg0, *arg1),
             Self::AddAssignRow(arg0, arg1) => Self::AddAssignRow(*arg0, *arg1),
             Self::ScaleRow(arg0, arg1) => Self::ScaleRow(*arg0, arg1.clone()),
+            Self::AddAssignMultipleRow(arg0, arg1, arg2) => {
+                Self::AddAssignMultipleRow(*arg0, arg1.clone(), *arg2)
+            }
         }
     }
 }
@@ -27,6 +56,7 @@ impl<F: Ring> ElementaryMatrix<F> {
         match self {
             ElementaryMatrix::SwapRows(arg0, arg1) => vec![*arg0, *arg1],
             ElementaryMatrix::AddAssignRow(arg0, arg1) => vec![*arg0, *arg1],
+            ElementaryMatrix::AddAssignMultipleRow(arg0, _arg1, arg2) => vec![*arg0, *arg2],
             ElementaryMatrix::ScaleRow(arg0, _) => vec![*arg0],
         }
     }
@@ -51,6 +81,45 @@ impl<F: Ring> ElementaryMatrix<F> {
                         ElementaryMatrix::AddAssignRow(arg2, _arg3) if arg2 == arg0 => true,
                         ElementaryMatrix::AddAssignRow(_arg2, arg3) if arg1 == arg3 => true,
                         ElementaryMatrix::AddAssignRow(_arg2, _arg3) => true,
+                        ElementaryMatrix::AddAssignMultipleRow(arg2, _, _arg3) if arg2 == arg1 => {
+                            false
+                        }
+                        ElementaryMatrix::AddAssignMultipleRow(_arg2, _, arg3) if arg0 == arg3 => {
+                            false
+                        }
+                        ElementaryMatrix::AddAssignMultipleRow(arg2, _, _arg3) if arg2 == arg0 => {
+                            true
+                        }
+                        ElementaryMatrix::AddAssignMultipleRow(_arg2, _, arg3) if arg1 == arg3 => {
+                            true
+                        }
+                        ElementaryMatrix::AddAssignMultipleRow(_arg2, _, _arg3) => true,
+
+                        ElementaryMatrix::ScaleRow(_, _) => false,
+                    };
+                }
+                ElementaryMatrix::AddAssignMultipleRow(arg0, _, arg1) => {
+                    return match other {
+                        ElementaryMatrix::SwapRows(_, _) => false,
+                        ElementaryMatrix::AddAssignRow(arg2, _arg3) if arg2 == arg1 => false,
+                        ElementaryMatrix::AddAssignRow(_arg2, arg3) if arg0 == arg3 => false,
+                        ElementaryMatrix::AddAssignRow(arg2, _arg3) if arg2 == arg0 => true,
+                        ElementaryMatrix::AddAssignRow(_arg2, arg3) if arg1 == arg3 => true,
+                        ElementaryMatrix::AddAssignRow(_arg2, _arg3) => true,
+                        ElementaryMatrix::AddAssignMultipleRow(arg2, _, _arg3) if arg2 == arg1 => {
+                            false
+                        }
+                        ElementaryMatrix::AddAssignMultipleRow(_arg2, _, arg3) if arg0 == arg3 => {
+                            false
+                        }
+                        ElementaryMatrix::AddAssignMultipleRow(arg2, _, _arg3) if arg2 == arg0 => {
+                            true
+                        }
+                        ElementaryMatrix::AddAssignMultipleRow(_arg2, _, arg3) if arg1 == arg3 => {
+                            true
+                        }
+                        ElementaryMatrix::AddAssignMultipleRow(_arg2, _, _arg3) => true,
+
                         ElementaryMatrix::ScaleRow(_, _) => false,
                     };
                 }
@@ -59,6 +128,7 @@ impl<F: Ring> ElementaryMatrix<F> {
                         ElementaryMatrix::ScaleRow(_, _) => true,
                         ElementaryMatrix::SwapRows(_, _) => false,
                         ElementaryMatrix::AddAssignRow(_, _) => false,
+                        ElementaryMatrix::AddAssignMultipleRow(_, _, _) => false,
                     };
                 }
             }
@@ -72,22 +142,28 @@ impl<F: Ring> ElementaryMatrix<F> {
             ElementaryMatrix::AddAssignRow(arg0, arg1) => {
                 ElementaryMatrix::AddAssignRow(arg1, arg0)
             }
+            ElementaryMatrix::AddAssignMultipleRow(arg0, arg1, arg2) => {
+                ElementaryMatrix::AddAssignMultipleRow(arg2, arg1, arg0)
+            }
             ElementaryMatrix::ScaleRow(arg0, arg1) => ElementaryMatrix::ScaleRow(arg0, arg1),
         }
     }
 
-    fn try_inverse(self) -> Option<Vec<Self>> {
+    pub(crate) fn try_inverse(self) -> Option<Vec<Self>> {
         match self {
             ElementaryMatrix::SwapRows(arg0, arg1) => {
                 Some(vec![ElementaryMatrix::SwapRows(arg0, arg1)])
             }
             ElementaryMatrix::AddAssignRow(arg0, arg1) => {
                 let neg_one = -F::one();
-                let first_step = ElementaryMatrix::ScaleRow(arg0, neg_one);
-                let second_step = ElementaryMatrix::AddAssignRow(arg0, arg1);
-                let neg_one = -F::one();
-                let third_step = ElementaryMatrix::ScaleRow(arg0, neg_one);
-                Some(vec![first_step, second_step, third_step])
+                Some(vec![ElementaryMatrix::AddAssignMultipleRow(
+                    arg0, neg_one, arg1,
+                )])
+            }
+            ElementaryMatrix::AddAssignMultipleRow(arg0, arg1, arg2) => {
+                Some(vec![ElementaryMatrix::AddAssignMultipleRow(
+                    arg0, -arg1, arg2,
+                )])
             }
             ElementaryMatrix::ScaleRow(arg0, arg1) => {
                 let arg1_inverse = arg1.try_inverse()?;
@@ -106,6 +182,15 @@ impl<F: Field> ElementaryMatrix<F> {
 pub struct ElementaryMatrixProduct<F: Ring> {
     pub(crate) dimension: BasisIndexing,
     pub(crate) steps: VecDeque<ElementaryMatrix<F>>,
+}
+
+impl<F: Ring + Debug> Debug for ElementaryMatrixProduct<F> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ElementaryMatrixProduct")
+            .field("dimension", &self.dimension)
+            .field("steps", &self.steps)
+            .finish()
+    }
 }
 
 impl<F: Ring + Clone> Clone for ElementaryMatrixProduct<F> {
@@ -227,6 +312,10 @@ impl<F: Ring> ElementaryMatrixProduct<F> {
             steps: new_steps,
             dimension: self.dimension,
         })
+    }
+
+    pub(crate) fn is_empty(&self) -> bool {
+        self.steps.is_empty()
     }
 }
 
