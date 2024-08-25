@@ -325,6 +325,9 @@ impl MatrixStore<F2> for F2Matrix {
 
     fn composed_eq_zero(&self, other: &Self) -> bool {
         assert_eq!(self.cols, other.rows);
+        if self.is_zero_matrix() || other.is_zero_matrix() {
+            return true;
+        }
 
         let mut result_data = Vec::with_capacity(self.rows);
         for i in 0..self.rows {

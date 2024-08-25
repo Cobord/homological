@@ -397,6 +397,9 @@ impl<const N: usize, F: 'static + Ring + Clone> MatrixStore<F> for SquareMatrixS
     }
 
     fn composed_eq_zero(&self, other: &Self) -> bool {
+        if self.is_zero_matrix() || other.is_zero_matrix() {
+            return true;
+        }
         let zero_f: F = 0.into();
         #[cfg(feature = "column-major")]
         {

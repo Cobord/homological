@@ -320,6 +320,9 @@ impl<F: Ring + Clone, M: MatrixStore<F> + Clone> MatrixStore<F> for FactorizedMa
     }
 
     fn composed_eq_zero(&self, rhs: &Self) -> bool {
+        if self.is_zero_matrix() || rhs.is_zero_matrix() {
+            return true;
+        }
         let right_self = Into::<M>::into(self.right_invertible.clone());
         let left_other = Into::<M>::into(rhs.left_invertible.clone());
         let done_other = right_self * left_other * rhs.middle.clone();
