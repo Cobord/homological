@@ -137,6 +137,7 @@ where
         if self_index == other_index {
             return;
         }
+        #[allow(clippy::cast_possible_wrap)]
         let to_prepend = other_index.abs_diff(self_index) as HomologicalIndexing;
         if R::differential_increases() {
             if other_index > self_index {

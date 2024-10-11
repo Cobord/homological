@@ -53,6 +53,7 @@ impl<F: Ring + Clone> Clone for ElementaryMatrix<F> {
 
 impl<F: Ring> ElementaryMatrix<F> {
     fn support(&self) -> Vec<usize> {
+        #[allow(clippy::match_same_arms)]
         match self {
             ElementaryMatrix::SwapRows(arg0, arg1) => vec![*arg0, *arg1],
             ElementaryMatrix::AddAssignRow(arg0, arg1) => vec![*arg0, *arg1],
@@ -68,12 +69,14 @@ impl<F: Ring> ElementaryMatrix<F> {
             .iter()
             .any(|in_self| support_other.contains(in_self))
         {
+            #[allow(clippy::match_same_arms)]
             match self {
                 ElementaryMatrix::SwapRows(arg0, arg1) => {
                     return *other == ElementaryMatrix::SwapRows(*arg0, *arg1)
                         || *other == ElementaryMatrix::SwapRows(*arg1, *arg0);
                 }
                 ElementaryMatrix::AddAssignRow(arg0, arg1) => {
+                    #[allow(clippy::match_same_arms)]
                     return match other {
                         ElementaryMatrix::SwapRows(_, _) => false,
                         ElementaryMatrix::AddAssignRow(arg2, _arg3) if arg2 == arg1 => false,
@@ -99,6 +102,7 @@ impl<F: Ring> ElementaryMatrix<F> {
                     };
                 }
                 ElementaryMatrix::AddAssignMultipleRow(arg0, _, arg1) => {
+                    #[allow(clippy::match_same_arms)]
                     return match other {
                         ElementaryMatrix::SwapRows(_, _) => false,
                         ElementaryMatrix::AddAssignRow(arg2, _arg3) if arg2 == arg1 => false,
@@ -124,6 +128,7 @@ impl<F: Ring> ElementaryMatrix<F> {
                     };
                 }
                 ElementaryMatrix::ScaleRow(_, _) => {
+                    #[allow(clippy::match_same_arms)]
                     return match other {
                         ElementaryMatrix::ScaleRow(_, _) => true,
                         ElementaryMatrix::SwapRows(_, _) => false,
@@ -179,6 +184,7 @@ impl<F: Field> ElementaryMatrix<F> {
     }
 }
 
+#[allow(clippy::module_name_repetitions)]
 pub struct ElementaryMatrixProduct<F: Ring> {
     pub(crate) dimension: BasisIndexing,
     pub(crate) steps: VecDeque<ElementaryMatrix<F>>,
@@ -283,6 +289,7 @@ impl<F: Ring> ElementaryMatrixProduct<F> {
     }
 
     pub(crate) fn transpose(self) -> Self {
+        #[allow(clippy::redundant_closure_for_method_calls)]
         let new_steps = self
             .steps
             .into_iter()
@@ -322,6 +329,7 @@ impl<F: Ring> ElementaryMatrixProduct<F> {
 impl<F: Field> ElementaryMatrixProduct<F> {
     #[allow(dead_code)]
     pub(crate) fn inverse(self) -> Self {
+        #[allow(clippy::redundant_closure_for_method_calls)]
         let new_steps = self
             .steps
             .into_iter()
@@ -337,6 +345,7 @@ impl<F: Field> ElementaryMatrixProduct<F> {
 
 impl<F: Field + Clone> DivAssign for ElementaryMatrixProduct<F> {
     fn div_assign(&mut self, rhs: Self) {
+        #[allow(clippy::redundant_closure_for_method_calls)]
         let inverse_rhs = rhs.steps.into_iter().rev().flat_map(|z| z.inverse());
         self.steps.extend(inverse_rhs);
     }

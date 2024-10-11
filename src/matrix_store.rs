@@ -12,7 +12,7 @@ pub trait LeftMultipliesBy<T>: Sized {
     #[allow(dead_code)]
     /// there may be better ways to multiply by lower/upper triangular matrices
     fn left_multiply_by_triangular(&mut self, _lower_or_upper: bool, l_or_u_matrix: &T) {
-        self.left_multiply(l_or_u_matrix)
+        self.left_multiply(l_or_u_matrix);
     }
 
     #[allow(dead_code)]
@@ -29,6 +29,7 @@ where
     fn make_entries(&self) -> LazyLinear<N, BasisIndexing>;
 }
 
+#[allow(clippy::module_name_repetitions)]
 pub trait MatrixStore<F: Ring + Clone>:
     Add<Output = Self>
     + Mul<Output = Self>
@@ -59,6 +60,7 @@ pub trait MatrixStore<F: Ring + Clone>:
     fn diagonal_only(&self) -> Self;
 }
 
+#[allow(clippy::module_name_repetitions)]
 pub trait EffortfulMatrixStore<F: Ring + Clone>:
     Add<Output = Self>
     + Mul<Output = Self>
@@ -98,6 +100,7 @@ pub trait EffortfulMatrixStore<F: Ring + Clone>:
     }
 }
 
+#[allow(clippy::module_name_repetitions)]
 #[allow(dead_code)]
 pub trait FieldMatrixStore<F: Ring + Clone>:
     Add<Output = Self>

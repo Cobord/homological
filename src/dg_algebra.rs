@@ -92,6 +92,7 @@ where
                         .map_or(0, |z| *z);
                     all_vecs.push_front(M::ColumnVector::from((this_space_dimension, vec![])));
                 }
+                #[allow(clippy::cast_possible_wrap)]
                 let mut index_of_last_dimension =
                     all_vecs_index_bound + ((all_vecs.len() - 1) as HomologicalIndexing);
                 while term_index > index_of_last_dimension {
@@ -102,7 +103,9 @@ where
                     all_vecs.push_back(M::ColumnVector::from((this_space_dimension, vec![])));
                 }
                 let offset_in_all_vecs = term_index - all_vecs_index_bound;
-                all_vecs[offset_in_all_vecs as usize] += (coeff, term_which);
+                #[allow(clippy::cast_sign_loss, clippy::cast_possible_truncation)]
+                let offset_in_all_vecs = offset_in_all_vecs as usize;
+                all_vecs[offset_in_all_vecs] += (coeff, term_which);
                 min_index = core::cmp::min(min_index, term_index);
                 max_index = core::cmp::max(max_index, term_index);
             }
@@ -129,7 +132,7 @@ where
         let mut new_elt_basis = LazyLinear::<_, _> {
             summands: Box::new(vec![].into_iter()),
         };
-        for term in all_vecs.into_iter() {
+        for term in all_vecs {
             new_elt_basis += term.make_entries().map(move |x| (hom_index, x));
             new_elt = new_elt + (hom_index, term).into();
             hom_index += direction;

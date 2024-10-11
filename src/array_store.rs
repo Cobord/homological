@@ -47,15 +47,17 @@ impl<const N: usize, F: Ring + Clone> AddAssign<(F, BasisIndexing)> for ArrayVec
 
 impl<const N: usize, F: Ring + Clone> AddAssign<Self> for ArrayVectorStore<N, F> {
     fn add_assign(&mut self, rhs: Self) {
+        #[allow(clippy::needless_for_each)]
         self.entries.iter_mut().zip(rhs.entries).for_each(|(z, w)| {
             let old_value = z.clone();
             *z = old_value + w;
-        })
+        });
     }
 }
 
 impl<const N: usize, F: Ring + Clone> MulAssign<F> for ArrayVectorStore<N, F> {
     fn mul_assign(&mut self, rhs: F) {
+        #[allow(clippy::needless_for_each)]
         self.entries.iter_mut().for_each(|w| {
             let old_value = w.clone();
             *w = old_value * rhs.clone();
@@ -132,16 +134,12 @@ impl<const N: usize, F: Ring + Clone> LeftMultipliesBy<SquareMatrixStore<N, F>>
     }
 
     fn zero_out(&mut self, keep_length: bool) {
-        if !keep_length {
-            panic!("Cannot zero out length, fixed size");
-        }
-        self.entries = core::array::from_fn(|_| 0.into())
+        assert!(keep_length, "Cannot zero out length, fixed size");
+        self.entries = core::array::from_fn(|_| 0.into());
     }
 
     fn zero_pad(&mut self, how_much: BasisIndexing) {
-        if how_much > 0 {
-            panic!("Cannot pad, fixed size");
-        }
+        assert!(how_much == 0, "Cannot pad, fixed size");
     }
 
     fn left_multiply_by_diagonal(&mut self, _d_matrix: &SquareMatrixStore<N, F>) {
@@ -189,11 +187,12 @@ impl<const N: usize, F: 'static + Ring + Clone> Mul<F> for SquareMatrixStore<N, 
 
 impl<const N: usize, F: 'static + Ring + Clone> MulAssign<F> for SquareMatrixStore<N, F> {
     fn mul_assign(&mut self, rhs: F) {
+        #[allow(clippy::needless_for_each)]
         self.each_entry.iter_mut().for_each(|z| {
             z.iter_mut().for_each(|w| {
                 let old_value = w.clone();
                 *w = old_value * rhs.clone();
-            })
+            });
         });
     }
 }
@@ -242,6 +241,7 @@ impl<const N: usize, F: 'static + Ring + Clone> Mul<Self> for SquareMatrixStore<
 }
 
 impl<const N: usize, F: 'static + Ring + Clone> RowReductionHelpers<F> for SquareMatrixStore<N, F> {
+    #[allow(clippy::similar_names)]
     fn swap_rows(&mut self, row_idx: BasisIndexing, row_jdx: BasisIndexing) {
         #[cfg(feature = "column-major")]
         {
@@ -254,6 +254,7 @@ impl<const N: usize, F: 'static + Ring + Clone> RowReductionHelpers<F> for Squar
         }
     }
 
+    #[allow(clippy::similar_names)]
     fn add_assign_rows(&mut self, row_idx: BasisIndexing, row_jdx: BasisIndexing) {
         #[cfg(feature = "column-major")]
         {
@@ -269,10 +270,11 @@ impl<const N: usize, F: 'static + Ring + Clone> RowReductionHelpers<F> for Squar
                 .for_each(|(z, w)| {
                     let old_value = z.clone();
                     *z = old_value + w;
-                })
+                });
         }
     }
 
+    #[allow(clippy::similar_names)]
     fn add_assign_factor_rows(
         &mut self,
         row_idx: BasisIndexing,
@@ -293,7 +295,7 @@ impl<const N: usize, F: 'static + Ring + Clone> RowReductionHelpers<F> for Squar
                 .for_each(|(z, w)| {
                     let old_value = z.clone();
                     *z = old_value + w * factor.clone();
-                })
+                });
         }
     }
 
@@ -308,7 +310,7 @@ impl<const N: usize, F: 'static + Ring + Clone> RowReductionHelpers<F> for Squar
             self.each_entry[row_idx % N].iter_mut().for_each(|z| {
                 let old_value = z.clone();
                 *z = old_value * factor.clone();
-            })
+            });
         }
     }
 
@@ -340,6 +342,7 @@ impl<const N: usize, F: 'static + Ring + Clone> RowReductionHelpers<F> for Squar
 impl<const N: usize, F: 'static + Ring + Clone> From<ElementaryMatrixProduct<F>>
     for SquareMatrixStore<N, F>
 {
+    #[allow(clippy::similar_names)]
     fn from(value: ElementaryMatrixProduct<F>) -> Self {
         let mut result = Self::identity(value.dimension);
         for step in value.steps.into_iter().rev() {
@@ -519,8 +522,8 @@ mod test {
         let c: SquareMatrixStore<2, f32> =
             Into::<ElementaryMatrixProduct<f32>>::into((2, c_under)).into();
         let mut c_expected = SquareMatrixStore::<2, f32>::zero_matrix(2, 2);
-        c_expected.set_entry(0, 1, (1 as i8).into());
-        c_expected.set_entry(1, 0, (1 as i8).into());
+        c_expected.set_entry(0, 1, (1_i8).into());
+        c_expected.set_entry(1, 0, (1_i8).into());
         assert_eq!(c.clone(), c_expected);
         assert_eq!(c.clone() * c, SquareMatrixStore::<2, f32>::identity(2));
 

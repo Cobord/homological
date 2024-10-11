@@ -1,7 +1,7 @@
 mod linear_comb;
 
-mod field_generals;
 mod bezout;
+mod field_generals;
 
 mod elementary_matrix;
 mod matrix_store;

@@ -11,3 +11,6 @@ bitvec = "^1.0.1"
 num = "^0.4.3"
 either = "^1.13.0"
 rand = "0.8.5"
+
+[features]
+column-major = []

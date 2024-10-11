@@ -231,7 +231,7 @@ impl<F: Ring + Clone, M: MatrixStore<F>> LeftMultipliesBy<FactorizedMatrix<F, M>
     }
 
     fn zero_pad(&mut self, how_much: BasisIndexing) {
-        self.zero_pad(how_much)
+        self.zero_pad(how_much);
     }
 
     fn left_multiply_by_diagonal(&mut self, d_matrix: &FactorizedMatrix<F, M>) {
@@ -416,7 +416,7 @@ mod test {
         }
         let recombined = z_transformed * w;
         if DO_PRINT {
-            println!("Recombined : {:?}", recombined);
+            println!("Recombined : {recombined:?}");
         }
         assert_eq!(recombined, expected);
 
@@ -441,7 +441,7 @@ mod test {
         }
         let recombined = z_transformed * w;
         if DO_PRINT {
-            println!("Recombined : {:?}", recombined);
+            println!("Recombined : {recombined:?}");
         }
         assert_eq!(recombined, expected);
 
@@ -467,7 +467,7 @@ mod test {
         assert_eq!(z_transformed, expected_prefactor);
         let recombined = z_transformed * w;
         if DO_PRINT {
-            println!("Recombined : {:?}", recombined);
+            println!("Recombined : {recombined:?}");
         }
         assert_eq!(recombined, expected);
 
@@ -489,7 +489,7 @@ mod test {
         }
         let recombined = z_transformed * w;
         if DO_PRINT {
-            println!("Recombined : {:?}", recombined);
+            println!("Recombined : {recombined:?}");
         }
         assert_eq!(recombined, expected);
     }
@@ -516,7 +516,7 @@ mod test {
         }
         let recombined = z_transformed * w;
         if DO_PRINT {
-            println!("Recombined : {:?}", recombined);
+            println!("Recombined : {recombined:?}");
         }
         assert_eq!(recombined, expected);
     }
@@ -543,7 +543,7 @@ mod test {
         }
         let recombined = z_transformed * w;
         if DO_PRINT {
-            println!("Recombined : {:?}", recombined);
+            println!("Recombined : {recombined:?}");
         }
         assert_eq!(recombined, expected);
     }
@@ -553,8 +553,8 @@ mod test {
         use super::row_echelon_form;
         use crate::array_store::SquareMatrixStore;
         use crate::factorized_matrix::RowReductionHelpers;
-        let mut rng = rand::thread_rng();
         const MATRIX_SIZE: usize = 5;
+        let mut rng = rand::thread_rng();
 
         let my_matrix = SquareMatrixStore::<MATRIX_SIZE, f32> {
             each_entry: core::array::from_fn(|_| {

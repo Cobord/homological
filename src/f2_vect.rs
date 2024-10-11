@@ -52,9 +52,10 @@ impl Div for F2 {
     type Output = Self;
 
     fn div(self, rhs: Self) -> Self::Output {
-        match rhs.0 {
-            true => self,
-            false => panic!("Division by 0"),
+        if rhs.0 {
+            self
+        } else {
+            panic!("Division by 0")
         }
     }
 }
@@ -139,6 +140,7 @@ impl Mul for F2Matrix {
 }
 
 impl From<ElementaryMatrixProduct<F2>> for F2Matrix {
+    #[allow(clippy::similar_names)]
     fn from(value: ElementaryMatrixProduct<F2>) -> Self {
         let mut result = Self::identity(value.dimension);
         for step in value.steps.into_iter().rev() {
@@ -208,9 +210,8 @@ impl LeftMultipliesBy<F2Matrix> for F2ColumnVec {
 
 impl MulAssign<F2> for F2Matrix {
     fn mul_assign(&mut self, rhs: F2) {
-        match rhs.0 {
-            true => {}
-            false => *self = Self::new(self.rows, self.cols, None),
+        if !rhs.0 {
+            *self = Self::new(self.rows, self.cols, None);
         }
     }
 }
@@ -218,9 +219,10 @@ impl MulAssign<F2> for F2Matrix {
 impl Mul<F2> for F2Matrix {
     type Output = Self;
     fn mul(self, rhs: F2) -> Self::Output {
-        match rhs.0 {
-            true => self,
-            false => Self::new(self.rows, self.cols, None),
+        if rhs.0 {
+            self
+        } else {
+            Self::new(self.rows, self.cols, None)
         }
     }
 }
@@ -238,9 +240,9 @@ impl From<(BasisIndexing, Vec<(F2, BasisIndexing)>)> for F2ColumnVec {
                 let old_value = entries_bitvec
                     .get(my_index)
                     .as_deref()
-                    .cloned()
+                    .copied()
                     .unwrap_or(false);
-                entries_bitvec.set(my_index, !old_value)
+                entries_bitvec.set(my_index, !old_value);
             }
         }
         Self((overall_dimension, entries_bitvec))
@@ -258,7 +260,7 @@ where
             if self_bit_vec
                 .get(idx % overall_dimension)
                 .as_deref()
-                .cloned()
+                .copied()
                 .unwrap_or(false)
             {
                 Some((F2::one(), idx))
@@ -276,8 +278,8 @@ impl AddAssign<(F2, BasisIndexing)> for F2ColumnVec {
     fn add_assign(&mut self, rhs: (F2, BasisIndexing)) {
         if rhs.0 .0 {
             let my_index = rhs.1 % self.0 .0;
-            let old_value = self.0 .1.get(my_index).as_deref().cloned().unwrap_or(false);
-            self.0 .1.set(my_index, !old_value)
+            let old_value = self.0 .1.get(my_index).as_deref().copied().unwrap_or(false);
+            self.0 .1.set(my_index, !old_value);
         }
     }
 }
@@ -301,13 +303,10 @@ impl AddAssign<F2ColumnVec> for F2ColumnVec {
 
 impl MulAssign<F2> for F2ColumnVec {
     fn mul_assign(&mut self, rhs: F2) {
-        match rhs.0 {
-            true => {}
-            false => {
-                let new_len = self.0 .0;
-                let new_vec = BitVec::repeat(false, new_len);
-                *self = F2ColumnVec((new_len, new_vec));
-            }
+        if !rhs.0 {
+            let new_len = self.0 .0;
+            let new_vec = BitVec::repeat(false, new_len);
+            *self = F2ColumnVec((new_len, new_vec));
         }
     }
 }
@@ -470,7 +469,7 @@ impl F2Matrix {
     pub fn print(&self) {
         println!("{} by {}", self.rows, self.cols);
         for row in &self.data {
-            println!("{:?}", row);
+            println!("{row:?}");
         }
     }
 
@@ -478,25 +477,26 @@ impl F2Matrix {
     fn read_row_entries(&self, i: BasisIndexing, js: &[BasisIndexing]) -> Vec<F2> {
         let relevant_row = self.data[i].clone();
         js.iter()
-            .map(|j| F2(relevant_row.get(*j).as_deref().cloned().unwrap_or(false)))
+            .map(|j| F2(relevant_row.get(*j).as_deref().copied().unwrap_or(false)))
             .collect()
     }
 }
 
 impl RowReductionHelpers<F2> for F2Matrix {
+    #[allow(clippy::similar_names)]
     fn swap_rows(&mut self, row_idx: BasisIndexing, row_jdx: BasisIndexing) {
         self.data.swap(row_idx, row_jdx);
     }
 
+    #[allow(clippy::similar_names)]
     fn add_assign_rows(&mut self, row_idx: BasisIndexing, row_jdx: BasisIndexing) {
         let row_i = self.data[row_idx].clone();
         self.data[row_jdx] ^= row_i;
     }
 
     fn scale_row(&mut self, row_idx: BasisIndexing, factor: F2) {
-        match factor.0 {
-            true => {}
-            false => self.data[row_idx] = BitVec::repeat(false, self.num_cols()),
+        if !factor.0 {
+            self.data[row_idx] = BitVec::repeat(false, self.num_cols());
         }
     }
 
@@ -504,7 +504,7 @@ impl RowReductionHelpers<F2> for F2Matrix {
         F2(self.data[row_idx]
             .get(col_idx)
             .as_deref()
-            .cloned()
+            .copied()
             .unwrap_or(false))
     }
     fn set_entry(&mut self, row_idx: BasisIndexing, col_idx: BasisIndexing, new_value: F2) {
@@ -518,17 +518,15 @@ impl RowReductionHelpers<F2> for F2Matrix {
         }
     }
 
+    #[allow(clippy::similar_names)]
     fn add_assign_factor_rows(
         &mut self,
         row_idx: BasisIndexing,
         factor: F2,
         row_jdx: BasisIndexing,
     ) {
-        match factor.0 {
-            true => {
-                self.add_assign_rows(row_idx, row_jdx);
-            }
-            false => {}
+        if factor.0 {
+            self.add_assign_rows(row_idx, row_jdx);
         }
     }
 }
@@ -551,6 +549,7 @@ mod test {
     #[allow(dead_code)]
     const DO_PRINT: bool = false;
 
+    #[allow(clippy::many_single_char_names, clippy::similar_names)]
     #[test]
     fn basic_test() {
         use super::{F2ColumnVec, F2Matrix};
