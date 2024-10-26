@@ -343,7 +343,7 @@ impl<F: Field> ElementaryMatrixProduct<F> {
     }
 }
 
-impl<F: Field + Clone> DivAssign for ElementaryMatrixProduct<F> {
+impl<F: Field> DivAssign for ElementaryMatrixProduct<F> {
     fn div_assign(&mut self, rhs: Self) {
         #[allow(clippy::redundant_closure_for_method_calls)]
         let inverse_rhs = rhs.steps.into_iter().rev().flat_map(|z| z.inverse());

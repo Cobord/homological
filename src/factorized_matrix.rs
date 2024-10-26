@@ -385,10 +385,18 @@ mod test {
         fn try_inverse(self) -> Option<Self> {
             Some(1. / self)
         }
+
+        fn mul_assign_borrow(&mut self, other: &Self) {
+            *self *= *other;
+        }
     }
     impl Ring for f32 {
         fn try_inverse(self) -> Option<Self> {
             Some(1. / self)
+        }
+
+        fn mul_assign_borrow(&mut self, other: &Self) {
+            *self *= *other;
         }
     }
 

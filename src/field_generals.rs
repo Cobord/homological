@@ -1,4 +1,4 @@
-use core::ops::{Add, Div, Mul, Neg, Sub};
+use core::ops::{Add, AddAssign, Div, Mul, Neg, Sub};
 
 use crate::linear_comb::Commutative;
 
@@ -6,6 +6,7 @@ pub type IntegerType = i16;
 
 pub trait Ring:
     Add<Output = Self>
+    + AddAssign<Self>
     + Sub<Output = Self>
     + Neg<Output = Self>
     + Mul<Output = Self>
@@ -31,6 +32,8 @@ pub trait Ring:
     fn try_inverse(self) -> Option<Self> {
         None
     }
+
+    fn mul_assign_borrow(&mut self, other: &Self);
 }
 
 pub trait Field: Ring + Div<Output = Self> + Commutative {

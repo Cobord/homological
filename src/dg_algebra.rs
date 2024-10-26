@@ -254,12 +254,14 @@ where
                     rhs_materialized
                         .clone()
                         .into_iter()
-                        .flat_map(move |rhs_summand| {
-                            let coeff = self_summand.0.clone() * rhs_summand.0;
+                        .flat_map(move |mut rhs_summand| {
+                            rhs_summand.0.mul_assign_borrow(&self_summand.0);
+                            let coeff = rhs_summand.0;
                             let pieces = (self.two_summand_mul)(self_summand.1, rhs_summand.1);
-                            pieces
-                                .summands
-                                .map(move |piece| (piece.0 * coeff.clone(), piece.1))
+                            pieces.summands.map(move |(mut piece0, piece1)| {
+                                piece0.mul_assign_borrow(&coeff);
+                                (piece0, piece1)
+                            })
                         })
                 })),
             }

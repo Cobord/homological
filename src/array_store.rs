@@ -11,13 +11,11 @@ use core::ops::{Add, AddAssign, Mul, MulAssign};
 
 #[derive(PartialEq, Clone)]
 #[repr(transparent)]
-pub struct SquareMatrixStore<const N: usize, F: Ring + Clone> {
+pub struct SquareMatrixStore<const N: usize, F: Ring> {
     pub(crate) each_entry: [[F; N]; N],
 }
 
-impl<const N: usize, F: Ring + Clone + core::fmt::Debug> core::fmt::Debug
-    for SquareMatrixStore<N, F>
-{
+impl<const N: usize, F: Ring + core::fmt::Debug> core::fmt::Debug for SquareMatrixStore<N, F> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("SquareMatrixStore")
             .field("each_entry", &self.each_entry)
@@ -38,29 +36,26 @@ impl<const N: usize, F: Ring + Clone> Clone for ArrayVectorStore<N, F> {
     }
 }
 
-impl<const N: usize, F: Ring + Clone> AddAssign<(F, BasisIndexing)> for ArrayVectorStore<N, F> {
+impl<const N: usize, F: Ring> AddAssign<(F, BasisIndexing)> for ArrayVectorStore<N, F> {
     fn add_assign(&mut self, rhs: (F, BasisIndexing)) {
-        let old_entry = self.entries[rhs.1].clone();
-        self.entries[rhs.1] = old_entry + rhs.0;
+        self.entries[rhs.1] += rhs.0;
     }
 }
 
-impl<const N: usize, F: Ring + Clone> AddAssign<Self> for ArrayVectorStore<N, F> {
+impl<const N: usize, F: Ring> AddAssign<Self> for ArrayVectorStore<N, F> {
     fn add_assign(&mut self, rhs: Self) {
         #[allow(clippy::needless_for_each)]
         self.entries.iter_mut().zip(rhs.entries).for_each(|(z, w)| {
-            let old_value = z.clone();
-            *z = old_value + w;
+            *z += w;
         });
     }
 }
 
-impl<const N: usize, F: Ring + Clone> MulAssign<F> for ArrayVectorStore<N, F> {
+impl<const N: usize, F: Ring> MulAssign<F> for ArrayVectorStore<N, F> {
     fn mul_assign(&mut self, rhs: F) {
         #[allow(clippy::needless_for_each)]
         self.entries.iter_mut().for_each(|w| {
-            let old_value = w.clone();
-            *w = old_value * rhs.clone();
+            w.mul_assign_borrow(&rhs);
         });
     }
 }
@@ -78,7 +73,7 @@ where
     }
 }
 
-impl<const N: usize, F: Ring + Clone> From<(BasisIndexing, Vec<(F, BasisIndexing)>)>
+impl<const N: usize, F: Ring> From<(BasisIndexing, Vec<(F, BasisIndexing)>)>
     for ArrayVectorStore<N, F>
 where
     F: 'static,
@@ -118,10 +113,12 @@ impl<const N: usize, F: Ring + Clone> LeftMultipliesBy<SquareMatrixStore<N, F>>
                 let i_entry = left_factor.each_entry[i].iter().zip(&self.entries).fold(
                     0.into(),
                     |acc, (x, y)| {
-                        if *x != zero_f && *y != zero_f {
-                            acc + x.clone() * y.clone()
-                        } else {
+                        if *x == zero_f || *y == zero_f {
                             acc
+                        } else {
+                            let mut to_add = x.clone();
+                            to_add.mul_assign_borrow(y);
+                            acc + to_add
                         }
                     },
                 );
@@ -142,33 +139,35 @@ impl<const N: usize, F: Ring + Clone> LeftMultipliesBy<SquareMatrixStore<N, F>>
         assert!(how_much == 0, "Cannot pad, fixed size");
     }
 
-    fn left_multiply_by_diagonal(&mut self, _d_matrix: &SquareMatrixStore<N, F>) {
-        todo!()
+    fn left_multiply_by_diagonal(&mut self, d_matrix: &SquareMatrixStore<N, F>) {
+        for idx in 0..N {
+            self.entries[idx].mul_assign_borrow(&d_matrix.each_entry[idx][idx]);
+        }
     }
 
     fn left_multiply_by_triangular(
         &mut self,
         _lower_or_upper: bool,
-        _l_or_u_matrix: &SquareMatrixStore<N, F>,
+        l_or_u_matrix: &SquareMatrixStore<N, F>,
     ) {
-        todo!()
+        // TODO actually use triangularity
+        self.left_multiply(l_or_u_matrix);
     }
 }
 
-impl<const N: usize, F: 'static + Ring + Clone> AddAssign<Self> for SquareMatrixStore<N, F> {
+impl<const N: usize, F: 'static + Ring> AddAssign<Self> for SquareMatrixStore<N, F> {
     fn add_assign(&mut self, mut other: Self) {
         for idx in 0..N {
             for jdx in 0..N {
-                let old_entry = self.each_entry[idx][jdx].clone();
                 let mut dummy_entry: F = 0.into();
                 core::mem::swap(&mut dummy_entry, &mut other.each_entry[idx][jdx]);
-                self.each_entry[idx][jdx] = old_entry + dummy_entry;
+                self.each_entry[idx][jdx] += dummy_entry;
             }
         }
     }
 }
 
-impl<const N: usize, F: 'static + Ring + Clone> Add<Self> for SquareMatrixStore<N, F> {
+impl<const N: usize, F: 'static + Ring> Add<Self> for SquareMatrixStore<N, F> {
     type Output = Self;
 
     fn add(mut self, rhs: Self) -> Self::Output {
@@ -177,7 +176,7 @@ impl<const N: usize, F: 'static + Ring + Clone> Add<Self> for SquareMatrixStore<
     }
 }
 
-impl<const N: usize, F: 'static + Ring + Clone> Mul<F> for SquareMatrixStore<N, F> {
+impl<const N: usize, F: 'static + Ring> Mul<F> for SquareMatrixStore<N, F> {
     type Output = Self;
     fn mul(mut self, rhs: F) -> Self {
         self *= rhs;
@@ -185,13 +184,12 @@ impl<const N: usize, F: 'static + Ring + Clone> Mul<F> for SquareMatrixStore<N, 
     }
 }
 
-impl<const N: usize, F: 'static + Ring + Clone> MulAssign<F> for SquareMatrixStore<N, F> {
+impl<const N: usize, F: 'static + Ring> MulAssign<F> for SquareMatrixStore<N, F> {
     fn mul_assign(&mut self, rhs: F) {
         #[allow(clippy::needless_for_each)]
         self.each_entry.iter_mut().for_each(|z| {
             z.iter_mut().for_each(|w| {
-                let old_value = w.clone();
-                *w = old_value * rhs.clone();
+                w.mul_assign_borrow(&rhs);
             });
         });
     }
@@ -222,10 +220,12 @@ impl<const N: usize, F: 'static + Ring + Clone> Mul<Self> for SquareMatrixStore<
                             .iter()
                             .zip(other_col_j)
                             .fold(0.into(), |acc, (x, y)| {
-                                if *x != zero_f && *y != zero_f {
-                                    acc + x.clone() * y.clone()
-                                } else {
+                                if *x == zero_f || *y == zero_f {
                                     acc
+                                } else {
+                                    let mut to_add = x.clone();
+                                    to_add.mul_assign_borrow(y);
+                                    acc + to_add
                                 }
                             });
                     new_row[j] = ij_entry;
@@ -268,8 +268,7 @@ impl<const N: usize, F: 'static + Ring + Clone> RowReductionHelpers<F> for Squar
                 .iter_mut()
                 .zip(row_idx)
                 .for_each(|(z, w)| {
-                    let old_value = z.clone();
-                    *z = old_value + w;
+                    *z += w;
                 });
         }
     }
@@ -292,9 +291,9 @@ impl<const N: usize, F: 'static + Ring + Clone> RowReductionHelpers<F> for Squar
             self.each_entry[row_jdx % N]
                 .iter_mut()
                 .zip(row_idx)
-                .for_each(|(z, w)| {
-                    let old_value = z.clone();
-                    *z = old_value + w * factor.clone();
+                .for_each(|(z, mut w)| {
+                    w.mul_assign_borrow(&factor);
+                    *z += w;
                 });
         }
     }
@@ -308,8 +307,7 @@ impl<const N: usize, F: 'static + Ring + Clone> RowReductionHelpers<F> for Squar
         #[cfg(not(feature = "column-major"))]
         {
             self.each_entry[row_idx % N].iter_mut().for_each(|z| {
-                let old_value = z.clone();
-                *z = old_value * factor.clone();
+                z.mul_assign_borrow(&factor);
             });
         }
     }
@@ -424,10 +422,12 @@ impl<const N: usize, F: 'static + Ring + Clone> MatrixStore<F> for SquareMatrixS
                             .iter()
                             .zip(other_col_j)
                             .fold(0.into(), |acc, (x, y)| {
-                                if *x != zero_f && *y != zero_f {
-                                    acc + x.clone() * y.clone()
-                                } else {
+                                if *x == zero_f || *y == zero_f {
                                     acc
+                                } else {
+                                    let mut to_add = x.clone();
+                                    to_add.mul_assign_borrow(y);
+                                    acc + to_add
                                 }
                             });
                     if ij_entry != zero_f {
@@ -512,21 +512,35 @@ mod test {
         .into();
         assert_eq!(a.clone() * b.clone(), ab);
         let ba: SquareMatrixStore<2, f32> = ElementaryMatrixProduct {
-            steps: vec![b_under, a_under].into(),
+            steps: vec![b_under.clone(), a_under.clone()].into(),
             dimension: 2,
         }
         .into();
-        assert!(a * b != ba);
+        assert!(a.clone() * b.clone() != ba);
 
         let c_under = ElementaryMatrix::<f32>::SwapRows(0, 1);
         let c: SquareMatrixStore<2, f32> =
-            Into::<ElementaryMatrixProduct<f32>>::into((2, c_under)).into();
+            Into::<ElementaryMatrixProduct<f32>>::into((2, c_under.clone())).into();
         let mut c_expected = SquareMatrixStore::<2, f32>::zero_matrix(2, 2);
         c_expected.set_entry(0, 1, (1_i8).into());
         c_expected.set_entry(1, 0, (1_i8).into());
         assert_eq!(c.clone(), c_expected);
-        assert_eq!(c.clone() * c, SquareMatrixStore::<2, f32>::identity(2));
+        assert_eq!(
+            c.clone() * c.clone(),
+            SquareMatrixStore::<2, f32>::identity(2)
+        );
+        let abc: SquareMatrixStore<2, f32> = ElementaryMatrixProduct {
+            steps: vec![a_under, b_under, c_under].into(),
+            dimension: 2,
+        }
+        .into();
+        assert_eq!(a * b * c, abc);
+    }
 
+    #[test]
+    fn permutation_matrices() {
+        use super::SquareMatrixStore;
+        use crate::elementary_matrix::{ElementaryMatrix, ElementaryMatrixProduct};
         let s12_under = ElementaryMatrix::<f32>::SwapRows(0, 1);
         let s12: SquareMatrixStore<3, f32> =
             Into::<ElementaryMatrixProduct<f32>>::into((3, s12_under.clone())).into();

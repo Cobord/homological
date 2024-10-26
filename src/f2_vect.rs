@@ -25,6 +25,16 @@ impl Add for F2 {
         F2(self.0 ^ rhs.0)
     }
 }
+
+impl AddAssign for F2 {
+    fn add_assign(&mut self, rhs: Self) {
+        #[allow(clippy::suspicious_op_assign_impl)]
+        if rhs.0 {
+            self.0 ^= true;
+        }
+    }
+}
+
 impl Neg for F2 {
     type Output = Self;
 
@@ -73,6 +83,12 @@ impl Ring for F2 {
 
     fn try_inverse(self) -> Option<Self> {
         Some(self)
+    }
+
+    fn mul_assign_borrow(&mut self, other: &Self) {
+        if !other.0 {
+            self.0 = false;
+        }
     }
 }
 
@@ -192,8 +208,9 @@ impl LeftMultipliesBy<F2Matrix> for F2ColumnVec {
             .extend_from_bitslice(&BitVec::<usize, Lsb0>::repeat(false, how_much));
     }
 
-    fn left_multiply_by_triangular(&mut self, _lower_or_upper: bool, _l_or_u_matrix: &F2Matrix) {
-        todo!()
+    fn left_multiply_by_triangular(&mut self, _lower_or_upper: bool, l_or_u_matrix: &F2Matrix) {
+        // TODO actually use triangularity
+        self.left_multiply(l_or_u_matrix);
     }
 
     fn left_multiply_by_diagonal(&mut self, d_matrix: &F2Matrix) {
