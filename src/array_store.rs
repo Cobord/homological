@@ -99,7 +99,7 @@ impl<const N: usize, F: Ring + Clone> LeftMultipliesBy<SquareMatrixStore<N, F>>
     fn left_multiply(&mut self, left_factor: &SquareMatrixStore<N, F>) {
         #[cfg(feature = "column-major")]
         {
-            todo!("left multipy column vector by a square matrix stored as columns")
+            todo!("left multiply column vector by a square matrix stored as columns")
         }
 
         #[cfg(not(feature = "column-major"))]
@@ -245,7 +245,12 @@ impl<const N: usize, F: 'static + Ring + Clone> RowReductionHelpers<F> for Squar
     fn swap_rows(&mut self, row_idx: BasisIndexing, row_jdx: BasisIndexing) {
         #[cfg(feature = "column-major")]
         {
-            todo!("swap rows if stored as columns")
+            for current_column in &mut self.each_entry {
+                let mut dummy = 0.into();
+                core::mem::swap(&mut current_column[row_idx % N], &mut dummy);
+                core::mem::swap(&mut current_column[row_jdx % N], &mut dummy);
+                core::mem::swap(&mut current_column[row_idx % N], &mut dummy);
+            }
         }
 
         #[cfg(not(feature = "column-major"))]
@@ -258,7 +263,10 @@ impl<const N: usize, F: 'static + Ring + Clone> RowReductionHelpers<F> for Squar
     fn add_assign_rows(&mut self, row_idx: BasisIndexing, row_jdx: BasisIndexing) {
         #[cfg(feature = "column-major")]
         {
-            todo!("adding one row to another without factor if stored as columns")
+            for current_column in &mut self.each_entry {
+                let to_add = current_column[row_idx % N].clone();
+                current_column[row_jdx % N] += to_add;
+            }
         }
 
         #[cfg(not(feature = "column-major"))]
@@ -282,7 +290,11 @@ impl<const N: usize, F: 'static + Ring + Clone> RowReductionHelpers<F> for Squar
     ) {
         #[cfg(feature = "column-major")]
         {
-            todo!("adding one row to another with factor if stored as columns")
+            for current_column in &mut self.each_entry {
+                let mut to_add = current_column[row_idx % N].clone();
+                to_add.mul_assign_borrow(&factor);
+                current_column[row_jdx % N] += to_add;
+            }
         }
 
         #[cfg(not(feature = "column-major"))]
@@ -301,7 +313,9 @@ impl<const N: usize, F: 'static + Ring + Clone> RowReductionHelpers<F> for Squar
     fn scale_row(&mut self, row_idx: BasisIndexing, factor: F) {
         #[cfg(feature = "column-major")]
         {
-            todo!("scaling rows if stored as columns")
+            for current_column in &mut self.each_entry {
+                current_column[row_idx % N].mul_assign_borrow(&factor);
+            }
         }
 
         #[cfg(not(feature = "column-major"))]
