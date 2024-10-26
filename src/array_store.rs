@@ -99,7 +99,7 @@ impl<const N: usize, F: Ring + Clone> LeftMultipliesBy<SquareMatrixStore<N, F>>
     fn left_multiply(&mut self, left_factor: &SquareMatrixStore<N, F>) {
         #[cfg(feature = "column-major")]
         {
-            todo!()
+            todo!("left multipy column vector by a square matrix stored as columns")
         }
 
         #[cfg(not(feature = "column-major"))]
@@ -201,7 +201,7 @@ impl<const N: usize, F: 'static + Ring + Clone> Mul<Self> for SquareMatrixStore<
     fn mul(self, other: Self) -> Self::Output {
         #[cfg(feature = "column-major")]
         {
-            todo!()
+            todo!("multiply two square matrices if stored as columns")
         }
 
         #[cfg(not(feature = "column-major"))]
@@ -245,7 +245,7 @@ impl<const N: usize, F: 'static + Ring + Clone> RowReductionHelpers<F> for Squar
     fn swap_rows(&mut self, row_idx: BasisIndexing, row_jdx: BasisIndexing) {
         #[cfg(feature = "column-major")]
         {
-            todo!()
+            todo!("swap rows if stored as columns")
         }
 
         #[cfg(not(feature = "column-major"))]
@@ -258,7 +258,7 @@ impl<const N: usize, F: 'static + Ring + Clone> RowReductionHelpers<F> for Squar
     fn add_assign_rows(&mut self, row_idx: BasisIndexing, row_jdx: BasisIndexing) {
         #[cfg(feature = "column-major")]
         {
-            todo!()
+            todo!("adding one row to another without factor if stored as columns")
         }
 
         #[cfg(not(feature = "column-major"))]
@@ -282,7 +282,7 @@ impl<const N: usize, F: 'static + Ring + Clone> RowReductionHelpers<F> for Squar
     ) {
         #[cfg(feature = "column-major")]
         {
-            todo!()
+            todo!("adding one row to another with factor if stored as columns")
         }
 
         #[cfg(not(feature = "column-major"))]
@@ -301,7 +301,7 @@ impl<const N: usize, F: 'static + Ring + Clone> RowReductionHelpers<F> for Squar
     fn scale_row(&mut self, row_idx: BasisIndexing, factor: F) {
         #[cfg(feature = "column-major")]
         {
-            todo!()
+            todo!("scaling rows if stored as columns")
         }
 
         #[cfg(not(feature = "column-major"))]
@@ -404,7 +404,7 @@ impl<const N: usize, F: 'static + Ring + Clone> MatrixStore<F> for SquareMatrixS
         let zero_f: F = 0.into();
         #[cfg(feature = "column-major")]
         {
-            todo!()
+            todo!("d^2 = 0 if stored as columns")
         }
 
         #[cfg(not(feature = "column-major"))]
@@ -473,15 +473,15 @@ impl<const N: usize, F: 'static + Ring + Clone> EffortfulMatrixStore<F>
     for SquareMatrixStore<N, F>
 {
     fn rank(&self) -> BasisIndexing {
-        todo!()
+        todo!("rank of [[F;N];N]")
     }
 
     fn kernel(&self) -> BasisIndexing {
-        todo!()
+        todo!("kernel of [[F;N];N]")
     }
 
     fn kernel_basis(&self) -> Vec<Self::ColumnVector> {
-        todo!()
+        todo!("basis for kernel of [[F;N];N]")
     }
 }
 

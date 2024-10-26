@@ -412,15 +412,15 @@ impl MatrixStore<F2> for F2Matrix {
 
 impl EffortfulMatrixStore<F2> for F2Matrix {
     fn rank(&self) -> BasisIndexing {
-        todo!()
+        todo!("rank of f2 matrix")
     }
 
     fn kernel(&self) -> BasisIndexing {
-        todo!()
+        todo!("kernel of f2 matrix")
     }
 
     fn kernel_basis(&self) -> Vec<Self::ColumnVector> {
-        todo!()
+        todo!("basis for kernel of f2 matrix")
     }
 }
 
