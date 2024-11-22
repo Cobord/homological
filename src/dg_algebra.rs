@@ -46,7 +46,6 @@ where
     M: EffortfulMatrixStore<F>,
     A: AlgebraStore<F> + From<(HomologicalIndexing, M::ColumnVector)>,
 {
-    #[allow(dead_code)]
     pub fn new(
         underlying_chain: Rc<ChainFVect<R, F, M>>,
         two_summand_mul: BasisMultiplier<F>,
@@ -57,6 +56,26 @@ where
             elt_basis: LazyLinear::<_, _>::new(),
             two_summand_mul,
         }
+    }
+
+    /// `e_i` of the F^n which is the vector space at a particular homological degree
+    #[allow(dead_code)]
+    pub fn concentrated_element(
+        underlying_chain: Rc<ChainFVect<R, F, M>>,
+        two_summand_mul: BasisMultiplier<F>,
+        which_degree: HomologicalIndexing,
+        in_basis_of_that_space: BasisIndexing,
+    ) -> Self {
+        let dim_that_space = underlying_chain.dimensions_of_that(which_degree);
+        let mut to_return = Self::new(underlying_chain, two_summand_mul);
+        let e_i: M::ColumnVector = (
+            dim_that_space,
+            vec![(Into::<F>::into(1), in_basis_of_that_space)],
+        )
+            .into();
+        to_return.elt = (which_degree, e_i).into();
+        to_return.elt_basis = (1.into(), (which_degree, in_basis_of_that_space)).into();
+        to_return
     }
 
     #[allow(dead_code)]

@@ -2,6 +2,7 @@ use core::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Sub};
 
 use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
+use num::{One, Zero};
 
 use crate::elementary_matrix::{ElementaryMatrix, ElementaryMatrixProduct};
 use crate::factorized_matrix::{
@@ -73,6 +74,22 @@ impl Div for F2 {
 impl From<IntegerType> for F2 {
     fn from(value: IntegerType) -> Self {
         Self(value % 2 == 0)
+    }
+}
+
+impl Zero for F2 {
+    fn zero() -> Self {
+        0.into()
+    }
+
+    fn is_zero(&self) -> bool {
+        !self.0
+    }
+}
+
+impl One for F2 {
+    fn one() -> Self {
+        1.into()
     }
 }
 
@@ -280,7 +297,7 @@ where
                 .copied()
                 .unwrap_or(false)
             {
-                Some((F2::one(), idx))
+                Some((F2::ring_one(), idx))
             } else {
                 None
             }

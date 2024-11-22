@@ -25,7 +25,7 @@ pub trait Ring:
         0
     }
 
-    fn one() -> Self {
+    fn ring_one() -> Self {
         1.into()
     }
 
@@ -43,7 +43,7 @@ pub trait Field: Ring + Div<Output = Self> + Commutative {
         if self == zero_f {
             None
         } else {
-            Some(Self::one() / self)
+            Some(Self::ring_one() / self)
         }
     }
 }

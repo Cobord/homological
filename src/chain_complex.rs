@@ -70,6 +70,23 @@ where
         return_val
     }
 
+    pub fn dimensions_of_that(&self, which_index: HomologicalIndexing) -> BasisIndexing {
+        if self.homological_index == which_index {
+            return self.dimension;
+        }
+        if R::differential_increases() && which_index < self.homological_index {
+            return 0;
+        }
+        if !R::differential_increases() && which_index > self.homological_index {
+            return 0;
+        }
+        if let Some(rest) = &self.rest {
+            rest.dimensions_of_that(which_index)
+        } else {
+            0
+        }
+    }
+
     #[allow(dead_code)]
     pub fn bettis_each_index(
         &self,

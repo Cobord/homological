@@ -160,7 +160,7 @@ impl<F: Ring> ElementaryMatrix<F> {
                 Some(vec![ElementaryMatrix::SwapRows(arg0, arg1)])
             }
             ElementaryMatrix::AddAssignRow(arg0, arg1) => {
-                let neg_one = -F::one();
+                let neg_one = -F::ring_one();
                 Some(vec![ElementaryMatrix::AddAssignMultipleRow(
                     arg0, neg_one, arg1,
                 )])
