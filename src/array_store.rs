@@ -28,6 +28,19 @@ pub struct ArrayVectorStore<const N: usize, F: Ring> {
     entries: [F; N],
 }
 
+impl<const N: usize, F: Ring + Clone> ArrayVectorStore<N, F> {
+    /// standard basis vector
+    /// # Panics
+    /// if `idx` is out of bounds
+    #[allow(dead_code)]
+    pub fn e_i(idx: usize) -> Self {
+        let mut entries = core::array::from_fn(|_| 0.into());
+        assert!(idx < N);
+        entries[idx] = 1.into();
+        Self { entries }
+    }
+}
+
 impl<const N: usize, F: Ring + Clone> Clone for ArrayVectorStore<N, F> {
     fn clone(&self) -> Self {
         Self {
