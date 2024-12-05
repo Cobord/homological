@@ -14,7 +14,7 @@ pub trait Ring:
     + From<IntegerType>
     + Sized
 {
-    #[allow(dead_code)]
+    #[must_use]
     fn characteristic(primes: Box<dyn Iterator<Item = IntegerType>>) -> IntegerType {
         let zero_f = Self::from(0);
         for i in primes {
@@ -25,6 +25,7 @@ pub trait Ring:
         0
     }
 
+    #[must_use]
     fn ring_one() -> Self {
         1.into()
     }
@@ -37,7 +38,6 @@ pub trait Ring:
 }
 
 pub trait Field: Ring + Div<Output = Self> + Commutative {
-    #[allow(dead_code)]
     fn try_inverse(self) -> Option<Self> {
         let zero_f = Self::from(0);
         if self == zero_f {

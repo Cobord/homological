@@ -32,7 +32,7 @@ impl<const N: usize, F: Ring + Clone> ArrayVectorStore<N, F> {
     /// standard basis vector
     /// # Panics
     /// if `idx` is out of bounds
-    #[allow(dead_code)]
+    #[must_use]
     pub fn e_i(idx: usize) -> Self {
         let mut entries = core::array::from_fn(|_| 0.into());
         assert!(idx < N);

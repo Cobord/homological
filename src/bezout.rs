@@ -1,10 +1,15 @@
 use crate::field_generals::Ring;
 
 #[allow(clippy::module_name_repetitions)]
-#[allow(dead_code)]
 pub trait BezoutDomain: Ring {
+    /// division
+    /// # Errors
+    /// divide by 0
+    #[allow(clippy::result_unit_err)]
     fn divide_by_divisor(&self, other: &Self) -> Result<Self, ()>;
 
+    /// greatest common divisor in this Bezout Domain
+    #[must_use]
     fn gcd(&self, other: &Self) -> Self;
 
     /// sigma*self + tau*other = beta
@@ -24,6 +29,7 @@ pub trait BezoutDomain: Ring {
             .expect("Dividing by the GCD which is a divisor");
         [[sigma, tau], [-gamma, alpha]]
     }
+
     fn l0_matrix_inverse(&self, other: &Self) -> [[Self; 2]; 2] {
         let ([sigma, tau], beta) = self.gcd_and_witnesses(other);
         let alpha = self

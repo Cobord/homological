@@ -7,7 +7,7 @@ use core::ops::{DivAssign, MulAssign};
 use std::collections::VecDeque;
 
 #[derive(PartialEq, Eq)]
-pub(crate) enum ElementaryMatrix<F: Ring> {
+pub enum ElementaryMatrix<F: Ring> {
     SwapRows(BasisIndexing, BasisIndexing),
     AddAssignRow(BasisIndexing, BasisIndexing), // AddAssignRow(x,y) add row x to row y
     AddAssignMultipleRow(BasisIndexing, F, BasisIndexing), // AddAssignMultipleRow(x,f,y) add row x * f to row y
@@ -154,7 +154,7 @@ impl<F: Ring> ElementaryMatrix<F> {
         }
     }
 
-    pub(crate) fn try_inverse(self) -> Option<Vec<Self>> {
+    fn try_inverse(self) -> Option<Vec<Self>> {
         match self {
             ElementaryMatrix::SwapRows(arg0, arg1) => {
                 Some(vec![ElementaryMatrix::SwapRows(arg0, arg1)])
@@ -288,7 +288,8 @@ impl<F: Ring> ElementaryMatrixProduct<F> {
         extracted_out_so_far
     }
 
-    pub(crate) fn transpose(self) -> Self {
+    #[must_use]
+    pub fn transpose(self) -> Self {
         #[allow(clippy::redundant_closure_for_method_calls)]
         let new_steps = self
             .steps
@@ -302,6 +303,7 @@ impl<F: Ring> ElementaryMatrixProduct<F> {
         }
     }
 
+    #[must_use]
     pub fn new(dimension: BasisIndexing) -> Self {
         Self {
             dimension,
@@ -309,7 +311,9 @@ impl<F: Ring> ElementaryMatrixProduct<F> {
         }
     }
 
-    pub(crate) fn try_inverse(self) -> Option<Self> {
+    /// invert this product of elementary matrices
+    #[must_use]
+    pub fn try_inverse(self) -> Option<Self> {
         let mut new_steps = VecDeque::with_capacity(self.steps.len());
         for cur_step in self.steps.into_iter().rev() {
             let cur_step_inverse = cur_step.try_inverse()?;
@@ -321,14 +325,21 @@ impl<F: Ring> ElementaryMatrixProduct<F> {
         })
     }
 
-    pub(crate) fn is_empty(&self) -> bool {
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
         self.steps.is_empty()
     }
 }
 
 impl<F: Field> ElementaryMatrixProduct<F> {
-    #[allow(dead_code)]
-    pub(crate) fn inverse(self) -> Self {
+    /// invert this product of elementary matrices
+    /// use `try_inverse` if not sure that it is solely consistent
+    /// of invertible factors
+    /// # Panics
+    /// if one of the factors was not invertible
+    /// such as multiplying a row by a zero divisor
+    #[must_use]
+    pub fn inverse(self) -> Self {
         #[allow(clippy::redundant_closure_for_method_calls)]
         let new_steps = self
             .steps

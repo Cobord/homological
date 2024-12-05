@@ -15,6 +15,7 @@ where
     N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + 'static,
     T: 'static,
 {
+    #[must_use]
     pub fn new() -> Self {
         LazyLinear::<_, _> {
             summands: Box::new(vec![].into_iter()),
@@ -30,7 +31,6 @@ where
         }
     }
 
-    #[allow(dead_code)]
     pub fn change_coeffs<N2>(self, f: impl Fn(N) -> N2 + 'static) -> LazyLinear<N2, T>
     where
         N2: Add<Output = N2> + Neg<Output = N2> + Mul<Output = N2> + 'static,
@@ -38,6 +38,16 @@ where
         LazyLinear::<_, _> {
             summands: Box::new(self.summands.map(move |(z0, z1)| (f(z0), z1))),
         }
+    }
+}
+
+impl<N, T> Default for LazyLinear<N, T>
+where
+    N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + 'static,
+    T: 'static,
+{
+    fn default() -> Self {
+        Self::new()
     }
 }
 

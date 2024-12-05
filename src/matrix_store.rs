@@ -9,13 +9,11 @@ pub(crate) type BasisIndexing = usize;
 pub trait LeftMultipliesBy<T>: Sized {
     fn left_multiply(&mut self, left_factor: &T);
 
-    #[allow(dead_code)]
     /// there may be better ways to multiply by lower/upper triangular matrices
     fn left_multiply_by_triangular(&mut self, _lower_or_upper: bool, l_or_u_matrix: &T) {
         self.left_multiply(l_or_u_matrix);
     }
 
-    #[allow(dead_code)]
     fn left_multiply_by_diagonal(&mut self, d_matrix: &T);
 
     fn zero_out(&mut self, keep_length: bool);
@@ -54,9 +52,10 @@ pub trait MatrixStore<F: Ring + Clone>:
     }
     fn is_zero_matrix(&self) -> bool;
     fn composed_eq_zero(&self, other: &Self) -> bool;
+    #[must_use]
     fn transpose(self) -> Self;
 
-    #[allow(dead_code)]
+    #[must_use]
     fn diagonal_only(&self) -> Self;
 }
 
@@ -73,17 +72,21 @@ pub trait EffortfulMatrixStore<F: Ring + Clone>:
     fn rank(&self) -> BasisIndexing;
     fn kernel(&self) -> BasisIndexing;
     fn kernel_basis(&self) -> Vec<Self::ColumnVector>;
+
+    #[allow(clippy::result_unit_err)]
+    /// the rank of (co)homology with outgoing differential `self` and incoming
+    /// differential `previous_d`
+    /// also return a basis for the kernel
+    /// there will be some linear dependencies of that kernel
+    /// when regarded as the corresponding equivalence classes in (co)homology
+    /// # Errors
+    /// if `d^2 \neq 0`
     fn homology_info(
         &self,
         previous_d: &Self,
         only_dimension: bool,
         check_composition: bool,
     ) -> Result<(BasisIndexing, Vec<Self::ColumnVector>), ()> {
-        // the rank of homology with outgoing differential self and incoming
-        // differential previous_d
-        // also a basis for the kernel which will have some
-        // linear dependencies when regarded as the equivalence classes in cohomology
-        // but we haven't chosen a basis for the quotient, only the kernel
         if check_composition && !self.composed_eq_zero(previous_d) {
             return Err(());
         }
@@ -101,7 +104,6 @@ pub trait EffortfulMatrixStore<F: Ring + Clone>:
 }
 
 #[allow(clippy::module_name_repetitions)]
-#[allow(dead_code)]
 pub trait FieldMatrixStore<F: Ring + Clone>:
     Add<Output = Self>
     + Mul<Output = Self>
@@ -113,10 +115,17 @@ pub trait FieldMatrixStore<F: Ring + Clone>:
 where
     F: Div<Output = F>,
 {
+    /// this matrix can be written as a product of 3 factors
+    /// L, D and U
     fn ldu_decompose(self) -> (Self, Self, Self);
 
+    /// invert the diagonal entries
+    /// # Errors
+    /// one of the diagonal entries was 0 so could not invert it
+    #[allow(clippy::result_unit_err)]
     fn diagonal_invert(&mut self) -> Result<(), ()>;
 
+    /// solve a linear system with (weighted) Jacobi iteration
     fn jacobi_iterate(
         self,
         mut initial_x: Self::ColumnVector,

@@ -45,6 +45,7 @@ where
     F: Ring + Clone,
     M: EffortfulMatrixStore<F>,
 {
+    #[must_use]
     pub fn concentrated_in_0(dimension: BasisIndexing) -> Self {
         Self {
             homological_index: 0,
@@ -56,7 +57,6 @@ where
         }
     }
 
-    #[allow(dead_code)]
     pub fn dimensions_each_index(&self) -> Vec<(HomologicalIndexing, BasisIndexing)> {
         debug_assert!(self.dimension == self.differential.dimensions().1);
         let mut return_val = if let Some(real_rest) = self.rest.as_ref() {
@@ -87,15 +87,18 @@ where
         }
     }
 
-    #[allow(dead_code)]
-    pub fn bettis_each_index(
+    pub fn bettis_each_index(&self) -> Vec<(HomologicalIndexing, BasisIndexing)> {
+        self.bettis_each_index_helper(None)
+    }
+
+    fn bettis_each_index_helper(
         &self,
         incoming_differential: Option<&M>,
     ) -> Vec<(HomologicalIndexing, BasisIndexing)> {
         debug_assert!(self.dimension == self.differential.dimensions().1);
         let mut return_val = if let Some(real_rest) = self.rest.as_ref() {
             debug_assert!(real_rest.dimension == self.differential.dimensions().0);
-            real_rest.bettis_each_index(Some(&self.differential))
+            real_rest.bettis_each_index_helper(Some(&self.differential))
         } else {
             debug_assert!(0 == self.differential.dimensions().0);
             vec![]
@@ -112,7 +115,6 @@ where
         return_val
     }
 
-    #[allow(dead_code)]
     pub fn shift_all(&mut self, how_much: HomologicalIndexing) {
         self.homological_index += how_much;
         if let Some(real_rest) = self.rest.as_deref_mut() {
@@ -147,7 +149,6 @@ where
         };
     }
 
-    #[allow(dead_code)]
     pub fn align_together(&mut self, other: &mut Self) {
         let self_index = self.homological_index;
         let other_index = other.homological_index;
@@ -172,10 +173,13 @@ where
         }
         let self_index = self.homological_index;
         let other_index = other.homological_index;
-        assert_eq!(self_index, other_index);
+        debug_assert_eq!(self_index, other_index);
     }
 
-    #[allow(dead_code)]
+    /// # Errors
+    /// Err(false) if the dimension of the space being appended/prepended
+    ///     did not match the dimensions of the `new_differential` matrix
+    /// Err(true) if `d^2 \neq 0`
     pub fn prepend_space(
         &mut self,
         new_dimension: BasisIndexing,
@@ -270,7 +274,6 @@ where
     F: Ring + Clone,
     M: EffortfulMatrixStore<F>,
 {
-    #[allow(dead_code)]
     pub fn negate_homological_indices(self) -> ChainFVect<HomologicalIndex, F, M> {
         ChainFVect::<HomologicalIndex, F, M> {
             homological_index: -self.homological_index,
@@ -290,7 +293,6 @@ where
     F: Ring + Clone,
     M: EffortfulMatrixStore<F>,
 {
-    #[allow(dead_code)]
     pub fn negate_homological_indices(self) -> ChainFVect<CohomologicalIndex, F, M> {
         ChainFVect::<CohomologicalIndex, F, M> {
             homological_index: -self.homological_index,

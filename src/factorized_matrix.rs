@@ -68,7 +68,11 @@ pub trait RowReductionHelpers<F: Ring + Clone> {
     }
 }
 
-#[allow(dead_code)]
+/// Gaussian elimnation
+/// # Panics
+/// elementary matrix product should be invertible
+/// a reason it might not be is because of a division by 0 error in the field `F`
+/// but no such elementary matrices should occur
 pub fn row_echelon_form<F, T>(mut m: T, ones_pivot: bool) -> (ElementaryMatrixProduct<F>, T)
 where
     F: Ring + Clone + PartialOrd + core::ops::Div<Output = F>,
@@ -145,8 +149,7 @@ where
     F: Ring + Clone,
     M: MatrixStore<F> + Canonicalizable<F>,
 {
-    #[allow(dead_code)]
-    fn recanonicalize(&mut self) {
+    pub fn recanonicalize(&mut self) {
         let mut new_middle = M::zero_matrix(self.middle.num_rows(), self.middle.num_cols());
         core::mem::swap(&mut new_middle, &mut self.middle);
         let new_middle_canonical = new_middle.canonicalize();

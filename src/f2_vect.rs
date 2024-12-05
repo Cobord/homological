@@ -442,7 +442,14 @@ impl EffortfulMatrixStore<F2> for F2Matrix {
 }
 
 impl F2Matrix {
-    // Constructor to create a new matrix
+    /// Constructor to create a new matrix
+    /// either constructs the 0 matrix if `None` is `data`
+    /// or fills it with the specified entries (given row by row)
+    /// # Panics
+    /// if you specify `data` then `rows` and `columns` should match
+    ///     - how many rows there actually are in `data`
+    ///     - how many columns each of those rows in `data` actually have
+    #[must_use]
     pub fn new(rows: BasisIndexing, cols: BasisIndexing, data: Option<Vec<BitVec>>) -> Self {
         if let Some(real_data) = data {
             assert_eq!(rows, real_data.len());
@@ -462,7 +469,10 @@ impl F2Matrix {
         }
     }
 
-    #[allow(dead_code)]
+    /// # Panics
+    /// on dimension mismatch
+    /// both `self` and `other` must have the same number of rows and columns
+    #[must_use]
     pub fn add_borrows(&self, other: &Self) -> Self {
         assert_eq!(self.rows, other.rows);
         assert_eq!(self.cols, other.cols);
@@ -477,7 +487,9 @@ impl F2Matrix {
         F2Matrix::new(self.rows, self.cols, Some(result_data))
     }
 
-    #[allow(dead_code)]
+    /// # Panics
+    /// on dimension mismatch of `self`s columns and `other`s rows
+    #[must_use]
     pub fn multiply_borrows(&self, other: &Self) -> Self {
         assert_eq!(self.cols, other.rows);
 
@@ -499,7 +511,6 @@ impl F2Matrix {
         F2Matrix::new(self.rows, other.cols, Some(result_data))
     }
 
-    #[allow(dead_code)]
     pub fn print(&self) {
         println!("{} by {}", self.rows, self.cols);
         for row in &self.data {
@@ -507,8 +518,8 @@ impl F2Matrix {
         }
     }
 
-    #[allow(dead_code)]
-    fn read_row_entries(&self, i: BasisIndexing, js: &[BasisIndexing]) -> Vec<F2> {
+    #[must_use]
+    pub fn read_row_entries(&self, i: BasisIndexing, js: &[BasisIndexing]) -> Vec<F2> {
         let relevant_row = self.data[i].clone();
         js.iter()
             .map(|j| F2(relevant_row.get(*j).as_deref().copied().unwrap_or(false)))

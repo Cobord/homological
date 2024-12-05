@@ -7,7 +7,6 @@ use crate::field_generals::Field;
 use crate::linear_comb::LazyLinear;
 use crate::matrix_store::{AsBasisCombination, BasisIndexing, EffortfulMatrixStore, MatrixStore};
 
-#[allow(dead_code)]
 pub trait AlgebraStore<F: Field>:
     MulAssign<F>
     + Mul<F>
@@ -26,7 +25,6 @@ type BasisMultiplier<F> = fn(
     (HomologicalIndexing, BasisIndexing),
 ) -> LazyLinear<F, (HomologicalIndexing, BasisIndexing)>;
 
-#[allow(dead_code)]
 pub struct DGAlgebra<
     R: HomSigns,
     F: Field + Clone,
@@ -59,7 +57,6 @@ where
     }
 
     /// `e_i` of the F^n which is the vector space at a particular homological degree
-    #[allow(dead_code)]
     pub fn concentrated_element(
         underlying_chain: Rc<ChainFVect<R, F, M>>,
         two_summand_mul: BasisMultiplier<F>,
@@ -78,7 +75,6 @@ where
         to_return
     }
 
-    #[allow(dead_code)]
     pub fn apply_differential(&mut self) {
         if self.elt == A::zero() {
             self.elt_basis = LazyLinear::<_, _>::new();
