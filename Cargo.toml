@@ -2,6 +2,9 @@
 name = "chains_f2vect"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "chain complexes and dg algebra manipulations"
+repository = "https://github.com/Cobord/Homological"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
