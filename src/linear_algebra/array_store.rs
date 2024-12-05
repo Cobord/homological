@@ -1,3 +1,5 @@
+use core::ops::{Add, AddAssign, Mul, MulAssign};
+
 use super::{
     elementary_matrix::{ElementaryMatrix, ElementaryMatrixProduct},
     factorized_matrix::RowReductionHelpers,
@@ -7,7 +9,6 @@ use super::{
     },
 };
 use crate::base_ring::field_generals::Ring;
-use core::ops::{Add, AddAssign, Mul, MulAssign};
 
 #[derive(PartialEq, Clone)]
 #[repr(transparent)]

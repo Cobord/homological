@@ -20,6 +20,7 @@ where
         }
     }
 
+    /// apply `f` to each term linearly over `N`
     pub fn map<T2>(self, f: impl Fn(T) -> T2 + 'static) -> LazyLinear<N, T2>
     where
         T2: 'static,
@@ -29,6 +30,8 @@ where
         }
     }
 
+    /// apply `f` to each coefficient
+    /// base change
     pub fn change_coeffs<N2>(self, f: impl Fn(N) -> N2 + 'static) -> LazyLinear<N2, T>
     where
         N2: Add<Output = N2> + Neg<Output = N2> + Mul<Output = N2> + 'static,
@@ -163,6 +166,9 @@ where
     }
 }
 
+/// `t * u -> \sum n_i t_i`
+/// u is of type `T2` which default is also `T`
+/// but it does not have to be
 pub trait TermMultiplier<N, T2 = Self>
 where
     N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + 'static,

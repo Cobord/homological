@@ -12,13 +12,16 @@ pub trait BezoutDomain: Ring {
     #[must_use]
     fn gcd(&self, other: &Self) -> Self;
 
-    /// sigma*self + tau*other = beta
-    /// alpha = self/beta
-    /// gamma = other/beta
-    /// sigma*alpha + tau*gamma = beta/beta = 1
-    /// the format of the output is [sigma,tau],beta
+    /// `sigma*self + tau*other = beta`
+    /// don't demand division by `beta` unless caller needs it
+    /// `alpha \equiv self/beta`
+    /// `gamma \equiv other/beta`
+    /// `sigma*alpha + tau*gamma = beta/beta = 1`
+    /// the format of the output is `[sigma,tau],beta`
+    /// don't give `alpha` or `gamma`, let caller produce those if needed
     fn gcd_and_witnesses(&self, other: &Self) -> ([Self; 2], Self);
 
+    /// see articles on Bezout Domains for `L_0`
     fn l0_matrix(&self, other: &Self) -> [[Self; 2]; 2] {
         let ([sigma, tau], beta) = self.gcd_and_witnesses(other);
         let alpha = self
@@ -30,6 +33,7 @@ pub trait BezoutDomain: Ring {
         [[sigma, tau], [-gamma, alpha]]
     }
 
+    /// see articles on Bezout Domains for `L_0`
     fn l0_matrix_inverse(&self, other: &Self) -> [[Self; 2]; 2] {
         let ([sigma, tau], beta) = self.gcd_and_witnesses(other);
         let alpha = self

@@ -7,10 +7,15 @@ use crate::base_ring::field_generals::{Field, Ring};
 
 #[derive(PartialEq, Eq)]
 pub enum ElementaryMatrix<F: Ring> {
+    /// swap the two rows assuming that they are both within bounds
     SwapRows(BasisIndexing, BasisIndexing),
-    AddAssignRow(BasisIndexing, BasisIndexing), // AddAssignRow(x,y) add row x to row y
-    AddAssignMultipleRow(BasisIndexing, F, BasisIndexing), // AddAssignMultipleRow(x,f,y) add row x * f to row y
-    ScaleRow(BasisIndexing, F), // not checked by the type that the scaling factor is invertible, but it should be
+    /// AddAssignRow(x,y) means add row x to row y
+    AddAssignRow(BasisIndexing, BasisIndexing),
+    /// AddAssignMultipleRow(x,f,y) add row x * f to row y
+    AddAssignMultipleRow(BasisIndexing, F, BasisIndexing),
+    /// ScaleRow(f, x) row x gets scaled by f
+    // not checked by the type that the scaling factor is invertible, but it should be
+    ScaleRow(BasisIndexing, F),
 }
 
 impl<F: Ring + Debug> Debug for ElementaryMatrix<F> {
@@ -287,6 +292,8 @@ impl<F: Ring> ElementaryMatrixProduct<F> {
         extracted_out_so_far
     }
 
+    /// the transpose of a product of elementary matrices is
+    /// also a product of elementary matrices
     #[must_use]
     pub fn transpose(self) -> Self {
         #[allow(clippy::redundant_closure_for_method_calls)]
@@ -302,6 +309,8 @@ impl<F: Ring> ElementaryMatrixProduct<F> {
         }
     }
 
+    /// no elementary factors
+    /// so this is for the identity matrix of `dimension`
     #[must_use]
     pub fn new(dimension: BasisIndexing) -> Self {
         Self {
@@ -311,6 +320,8 @@ impl<F: Ring> ElementaryMatrixProduct<F> {
     }
 
     /// invert this product of elementary matrices
+    /// there may be a scaling a row by 0 which causes
+    /// noninvertibility
     #[must_use]
     pub fn try_inverse(self) -> Option<Self> {
         let mut new_steps = VecDeque::with_capacity(self.steps.len());
@@ -324,6 +335,7 @@ impl<F: Ring> ElementaryMatrixProduct<F> {
         })
     }
 
+    /// are there factors in the product
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.steps.is_empty()

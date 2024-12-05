@@ -6,16 +6,25 @@ use crate::base_ring::field_generals::Ring;
 pub(crate) type BasisIndexing = usize;
 
 pub trait LeftMultipliesBy<T>: Sized {
+    /// multiply `self` to become `left_factor * self`
+    /// `Self` is the type of column vectors
+    /// and `T` is the type of the matrices
     fn left_multiply(&mut self, left_factor: &T);
 
     /// there may be better ways to multiply by lower/upper triangular matrices
+    /// but it defaults to ignoring this information and using `left_multiply`
     fn left_multiply_by_triangular(&mut self, _lower_or_upper: bool, l_or_u_matrix: &T) {
         self.left_multiply(l_or_u_matrix);
     }
 
+    /// there are definitely better ways to multiply by diagonal matrices
+    /// this does not get such a default ignoring that it is diagonal
     fn left_multiply_by_diagonal(&mut self, d_matrix: &T);
 
+    /// replace `self` with zero vector
     fn zero_out(&mut self, keep_length: bool);
+
+    /// inject along the map `V -> V \bigoplus F^{how_much}`
     fn zero_pad(&mut self, how_much: BasisIndexing);
 }
 
@@ -23,6 +32,7 @@ pub trait AsBasisCombination<N>
 where
     N: Add<Output = N> + Neg<Output = N> + Mul<Output = N> + Clone,
 {
+    /// turn a column vector into explicit linear combination of basis vectors
     fn make_entries(&self) -> LazyLinear<N, BasisIndexing>;
 }
 
@@ -50,7 +60,10 @@ pub trait MatrixStore<F: Ring + Clone>:
         (self.num_rows(), self.num_cols())
     }
     fn is_zero_matrix(&self) -> bool;
+
+    /// is the product of `self` and `other` the zero matrix
     fn composed_eq_zero(&self, other: &Self) -> bool;
+
     #[must_use]
     fn transpose(self) -> Self;
 
@@ -68,8 +81,13 @@ pub trait EffortfulMatrixStore<F: Ring + Clone>:
     + From<ElementaryMatrixProduct<F>>
     + MatrixStore<F>
 {
+    /// rank of this matrix
     fn rank(&self) -> BasisIndexing;
+
+    /// dimension of the kernel
     fn kernel(&self) -> BasisIndexing;
+
+    /// a basis for the kernel
     fn kernel_basis(&self) -> Vec<Self::ColumnVector>;
 
     #[allow(clippy::result_unit_err)]

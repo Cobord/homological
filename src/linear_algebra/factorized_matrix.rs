@@ -24,6 +24,7 @@ impl<F: Ring + Clone + 'static, M: MatrixStore<F>> FactorizedMatrix<F, M> {
     }
 }
 
+/// can do elementary operations on `self`
 pub trait RowReductionHelpers<F: Ring + Clone> {
     fn swap_rows(&mut self, row_idx: BasisIndexing, row_jdx: BasisIndexing);
 
@@ -151,6 +152,10 @@ where
     F: Ring + Clone,
     M: MatrixStore<F> + Canonicalizable<F>,
 {
+    /// `canonicalize` the middle factor and put the `left_invertible` and `right_invertible` parts
+    /// together with what was already there
+    /// both of those invertible factors are manifestly invertible because they are given
+    /// explicitly as products of `ElementaryMatrix`
     pub fn recanonicalize(&mut self) {
         let mut new_middle = M::zero_matrix(self.middle.num_rows(), self.middle.num_cols());
         core::mem::swap(&mut new_middle, &mut self.middle);

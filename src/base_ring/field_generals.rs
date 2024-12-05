@@ -30,14 +30,21 @@ pub trait Ring:
         1.into()
     }
 
+    /// by default nothing is invertible
+    /// override with inverse if it exists
+    #[must_use]
     fn try_inverse(self) -> Option<Self> {
         None
     }
 
+    /// `x *= y`
+    /// but not `MulAssign` because `other` is not owned
     fn mul_assign_borrow(&mut self, other: &Self);
 }
 
 pub trait Field: Ring + Div<Output = Self> + Commutative {
+    /// if implement Field, this will be used instead of `try_inverse` of Ring
+    /// and it will just use the `Div` implementation
     fn try_inverse(self) -> Option<Self> {
         let zero_f = Self::from(0);
         if self == zero_f {

@@ -46,6 +46,11 @@ where
     M: EffortfulMatrixStore<F>,
     A: AlgebraStore<F> + From<(HomologicalIndexing, M::ColumnVector)>,
 {
+    /// the 0 element of this `DGAlgebra`
+    /// the chain complex when forgetting the algebra structure
+    ///     is `underlying_chain`
+    /// the operation of multiplication of `e_i[m]` and `e_j[n]` is encoded by `two_summand_mul`
+    /// where `e_i[n]` means in the n'th degree the basis vector `e_i`
     pub fn new(
         underlying_chain: Rc<ChainFVect<R, F, M>>,
         two_summand_mul: BasisMultiplier<F>,
@@ -77,6 +82,7 @@ where
         to_return
     }
 
+    /// replace `a` by `da`
     pub fn apply_differential(&mut self) {
         if self.elt == A::zero() {
             self.elt_basis = LazyLinear::<_, _>::new();

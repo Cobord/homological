@@ -45,6 +45,7 @@ where
     F: Ring + Clone,
     M: EffortfulMatrixStore<F>,
 {
+    /// a single vector space of `dimension` concentrated in degree 0
     #[must_use]
     pub fn concentrated_in_0(dimension: BasisIndexing) -> Self {
         Self {
@@ -57,6 +58,7 @@ where
         }
     }
 
+    /// what are the dimensions of the vector spaces at each `HomologicalIndexing`
     pub fn dimensions_each_index(&self) -> Vec<(HomologicalIndexing, BasisIndexing)> {
         debug_assert!(self.dimension == self.differential.dimensions().1);
         let mut return_val = if let Some(real_rest) = self.rest.as_ref() {
@@ -70,6 +72,7 @@ where
         return_val
     }
 
+    /// what are the dimensions of the vector spaces at `which_index` specifically
     pub fn dimensions_of_that(&self, which_index: HomologicalIndexing) -> BasisIndexing {
         if self.homological_index == which_index {
             return self.dimension;
@@ -87,6 +90,7 @@ where
         }
     }
 
+    /// all the betti numbers
     pub fn bettis_each_index(&self) -> Vec<(HomologicalIndexing, BasisIndexing)> {
         self.bettis_each_index_helper(None)
     }
@@ -115,6 +119,9 @@ where
         return_val
     }
 
+    /// shift the complex by `how_much`
+    /// depending on the sign of this and the marker R of `HomSigns`
+    /// this may be in the direction of the differential or not
     pub fn shift_all(&mut self, how_much: HomologicalIndexing) {
         self.homological_index += how_much;
         if let Some(real_rest) = self.rest.as_deref_mut() {
@@ -122,6 +129,9 @@ where
         }
     }
 
+    /// put more zero vector spaces before the first nonzero differential
+    /// (not trivially 0, it might be 0 but not obviously)
+    /// puts them opposite the direction of the differential
     pub fn prepend_zero_spaces(&mut self, how_many: HomologicalIndexing) {
         if how_many <= 0 {
             return;
@@ -149,6 +159,7 @@ where
         };
     }
 
+    /// get these two to line up so they start with the same `HomologicalIndexing`
     pub fn align_together(&mut self, other: &mut Self) {
         let self_index = self.homological_index;
         let other_index = other.homological_index;
@@ -176,6 +187,9 @@ where
         debug_assert_eq!(self_index, other_index);
     }
 
+    /// like `prepend_zero_space` put a vector space before the first differential
+    /// (one that is not implicitly 0)
+    /// but here we are putting a nontrivial vector space and a differential to the next space
     /// # Errors
     /// Err(false) if the dimension of the space being appended/prepended
     ///     did not match the dimensions of the `new_differential` matrix
@@ -312,10 +326,8 @@ mod test {
     #[test]
     fn two_term_id_complex() {
         use super::{ChainFVect, CohomologicalIndex};
-        use crate::linear_algebra::{
-            f2_vect::{F2Matrix, F2},
-            matrix_store::MatrixStore,
-        };
+        use crate::base_ring::f2::F2;
+        use crate::linear_algebra::{f2_vect::F2Matrix, matrix_store::MatrixStore};
         let dimension = 5;
         let identity_matrix = F2Matrix::identity(dimension);
         assert!(!F2Matrix::composed_eq_zero(
