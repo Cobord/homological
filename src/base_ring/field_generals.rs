@@ -1,6 +1,6 @@
 use core::ops::{Add, AddAssign, Div, Mul, Neg, Sub};
 
-use crate::linear_comb::Commutative;
+pub trait Commutative: Mul<Output = Self> + Sized {}
 
 pub type IntegerType = i16;
 

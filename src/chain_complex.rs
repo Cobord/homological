@@ -1,8 +1,8 @@
 use core::marker::PhantomData;
 use std::collections::VecDeque;
 
-use crate::field_generals::Ring;
-use crate::matrix_store::{BasisIndexing, EffortfulMatrixStore, LeftMultipliesBy};
+use crate::base_ring::field_generals::Ring;
+use crate::linear_algebra::matrix_store::{BasisIndexing, EffortfulMatrixStore, LeftMultipliesBy};
 
 mod private {
     pub trait Sealed {}
@@ -312,8 +312,10 @@ mod test {
     #[test]
     fn two_term_id_complex() {
         use super::{ChainFVect, CohomologicalIndex};
-        use crate::f2_vect::{F2Matrix, F2};
-        use crate::matrix_store::MatrixStore;
+        use crate::linear_algebra::{
+            f2_vect::{F2Matrix, F2},
+            matrix_store::MatrixStore,
+        };
         let dimension = 5;
         let identity_matrix = F2Matrix::identity(dimension);
         assert!(!F2Matrix::composed_eq_zero(

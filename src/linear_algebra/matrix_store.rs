@@ -1,8 +1,7 @@
 use core::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg};
 
-use crate::elementary_matrix::ElementaryMatrixProduct;
-use crate::field_generals::Ring;
-use crate::linear_comb::LazyLinear;
+use super::{elementary_matrix::ElementaryMatrixProduct, linear_comb::LazyLinear};
+use crate::base_ring::field_generals::Ring;
 
 pub(crate) type BasisIndexing = usize;
 

@@ -1,12 +1,12 @@
-use crate::{
+use super::{
     elementary_matrix::{ElementaryMatrix, ElementaryMatrixProduct},
     factorized_matrix::RowReductionHelpers,
-    field_generals::Ring,
     linear_comb::LazyLinear,
     matrix_store::{
         AsBasisCombination, BasisIndexing, EffortfulMatrixStore, LeftMultipliesBy, MatrixStore,
     },
 };
+use crate::base_ring::field_generals::Ring;
 use core::ops::{Add, AddAssign, Mul, MulAssign};
 
 #[derive(PartialEq, Clone)]
@@ -517,9 +517,9 @@ mod test {
     #[test]
     fn elementaries() {
         use super::SquareMatrixStore;
-        use crate::elementary_matrix::{ElementaryMatrix, ElementaryMatrixProduct};
-        use crate::factorized_matrix::RowReductionHelpers;
-        use crate::matrix_store::MatrixStore;
+        use crate::linear_algebra::elementary_matrix::{ElementaryMatrix, ElementaryMatrixProduct};
+        use crate::linear_algebra::factorized_matrix::RowReductionHelpers;
+        use crate::linear_algebra::matrix_store::MatrixStore;
         let a_under = ElementaryMatrix::<f32>::AddAssignMultipleRow(1, 5., 0);
         let a: SquareMatrixStore<2, f32> =
             Into::<ElementaryMatrixProduct<f32>>::into((2, a_under.clone())).into();
@@ -567,7 +567,7 @@ mod test {
     #[test]
     fn permutation_matrices() {
         use super::SquareMatrixStore;
-        use crate::elementary_matrix::{ElementaryMatrix, ElementaryMatrixProduct};
+        use crate::linear_algebra::elementary_matrix::{ElementaryMatrix, ElementaryMatrixProduct};
         let s12_under = ElementaryMatrix::<f32>::SwapRows(0, 1);
         let s12: SquareMatrixStore<3, f32> =
             Into::<ElementaryMatrixProduct<f32>>::into((3, s12_under.clone())).into();

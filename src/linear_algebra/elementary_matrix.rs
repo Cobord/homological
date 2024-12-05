@@ -1,10 +1,9 @@
-use crate::{
-    field_generals::{Field, Ring},
-    matrix_store::BasisIndexing,
-};
 use core::fmt::Debug;
 use core::ops::{DivAssign, MulAssign};
 use std::collections::VecDeque;
+
+use super::matrix_store::BasisIndexing;
+use crate::base_ring::field_generals::{Field, Ring};
 
 #[derive(PartialEq, Eq)]
 pub enum ElementaryMatrix<F: Ring> {

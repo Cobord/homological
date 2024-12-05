@@ -1,4 +1,4 @@
-use crate::field_generals::Ring;
+use super::field_generals::Ring;
 
 #[allow(clippy::module_name_repetitions)]
 pub trait BezoutDomain: Ring {

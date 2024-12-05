@@ -4,15 +4,15 @@ use bitvec::order::Lsb0;
 use bitvec::prelude::BitVec;
 use num::{One, Zero};
 
-use crate::elementary_matrix::{ElementaryMatrix, ElementaryMatrixProduct};
-use crate::factorized_matrix::{
-    row_echelon_form, Canonicalizable, FactorizedMatrix, RowReductionHelpers,
+use super::{
+    elementary_matrix::{ElementaryMatrix, ElementaryMatrixProduct},
+    factorized_matrix::{row_echelon_form, Canonicalizable, FactorizedMatrix, RowReductionHelpers},
+    linear_comb::LazyLinear,
+    matrix_store::{
+        AsBasisCombination, BasisIndexing, EffortfulMatrixStore, LeftMultipliesBy, MatrixStore,
+    },
 };
-use crate::field_generals::{Field, IntegerType, Ring};
-use crate::linear_comb::{Commutative, LazyLinear};
-use crate::matrix_store::{
-    AsBasisCombination, BasisIndexing, EffortfulMatrixStore, LeftMultipliesBy, MatrixStore,
-};
+use crate::base_ring::field_generals::{Commutative, Field, IntegerType, Ring};
 
 #[derive(PartialEq, Eq, Debug, Clone, PartialOrd)]
 #[repr(transparent)]
@@ -598,7 +598,7 @@ mod test {
     #[test]
     fn basic_test() {
         use super::{F2ColumnVec, F2Matrix};
-        use crate::matrix_store::{LeftMultipliesBy, MatrixStore};
+        use crate::linear_algebra::matrix_store::{LeftMultipliesBy, MatrixStore};
         use bitvec::vec::BitVec;
 
         let mut one_zero = BitVec::new();
@@ -675,8 +675,8 @@ mod test {
     #[test]
     fn elementaries() {
         use super::{F2Matrix, F2};
-        use crate::elementary_matrix::{ElementaryMatrix, ElementaryMatrixProduct};
-        use crate::matrix_store::MatrixStore;
+        use crate::linear_algebra::elementary_matrix::{ElementaryMatrix, ElementaryMatrixProduct};
+        use crate::linear_algebra::matrix_store::MatrixStore;
         let a_under = ElementaryMatrix::<F2>::AddAssignRow(1, 0);
         let a: F2Matrix = Into::<ElementaryMatrixProduct<F2>>::into((2, a_under.clone())).into();
         let mut a_expected = F2Matrix::identity(2);

@@ -1,9 +1,11 @@
 use core::ops::{Add, Mul, MulAssign};
 use std::collections::VecDeque;
 
-use crate::elementary_matrix::{ElementaryMatrix, ElementaryMatrixProduct};
-use crate::field_generals::Ring;
-use crate::matrix_store::{BasisIndexing, EffortfulMatrixStore, LeftMultipliesBy, MatrixStore};
+use super::{
+    elementary_matrix::{ElementaryMatrix, ElementaryMatrixProduct},
+    matrix_store::{BasisIndexing, EffortfulMatrixStore, LeftMultipliesBy, MatrixStore},
+};
+use crate::base_ring::field_generals::Ring;
 
 pub struct FactorizedMatrix<F: Ring + Clone + 'static, M: MatrixStore<F>> {
     pub(crate) left_invertible: ElementaryMatrixProduct<F>,
@@ -382,7 +384,7 @@ impl<F: Ring + Clone, M: EffortfulMatrixStore<F> + Clone> EffortfulMatrixStore<F
 }
 
 mod test {
-    use crate::field_generals::Ring;
+    use crate::base_ring::field_generals::Ring;
 
     impl Ring for f64 {
         fn try_inverse(self) -> Option<Self> {
@@ -409,8 +411,8 @@ mod test {
     #[test]
     fn row_echelon_example_0() {
         use super::row_echelon_form;
-        use crate::array_store::SquareMatrixStore;
-        use crate::matrix_store::MatrixStore;
+        use crate::linear_algebra::array_store::SquareMatrixStore;
+        use crate::linear_algebra::matrix_store::MatrixStore;
         let my_matrix = SquareMatrixStore::<3, f64> {
             each_entry: [[1., 0., 0.], [0., -3., 0.], [0., 0., 2.]],
         };
@@ -508,7 +510,7 @@ mod test {
     #[test]
     fn row_echelon_example_1() {
         use super::row_echelon_form;
-        use crate::array_store::SquareMatrixStore;
+        use crate::linear_algebra::array_store::SquareMatrixStore;
         let my_matrix = SquareMatrixStore::<3, f64> {
             each_entry: [[1., 0., 0.], [0., -3., 0.], [0., 1., 2.]],
         };
@@ -535,7 +537,7 @@ mod test {
     #[test]
     fn row_echelon_example_2() {
         use super::row_echelon_form;
-        use crate::array_store::SquareMatrixStore;
+        use crate::linear_algebra::array_store::SquareMatrixStore;
         let my_matrix = SquareMatrixStore::<3, f32> {
             each_entry: [[1., -4., -5.], [10., -3., -6.], [4., 1., 3.]],
         };
@@ -562,8 +564,8 @@ mod test {
     #[test]
     fn random_row_echelon() {
         use super::row_echelon_form;
-        use crate::array_store::SquareMatrixStore;
-        use crate::factorized_matrix::RowReductionHelpers;
+        use crate::linear_algebra::array_store::SquareMatrixStore;
+        use crate::linear_algebra::factorized_matrix::RowReductionHelpers;
         const MATRIX_SIZE: usize = 5;
         let mut rng = rand::thread_rng();
 

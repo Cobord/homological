@@ -1,8 +1,6 @@
 use core::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 use num::traits::One;
 
-pub trait Commutative: Mul<Output = Self> + Sized {}
-
 pub struct LazyLinear<N, T>
 where
     N: Add<Output = N> + Neg<Output = N> + Mul<Output = N>,

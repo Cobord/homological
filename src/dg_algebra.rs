@@ -2,10 +2,12 @@ use core::ops::{Add, Mul, MulAssign, Neg, Sub};
 use std::collections::{HashMap, VecDeque};
 use std::rc::Rc;
 
+use crate::base_ring::field_generals::Field;
 use crate::chain_complex::{ChainFVect, HomSigns, HomologicalIndexing};
-use crate::field_generals::Field;
-use crate::linear_comb::LazyLinear;
-use crate::matrix_store::{AsBasisCombination, BasisIndexing, EffortfulMatrixStore, MatrixStore};
+use crate::linear_algebra::{
+    linear_comb::LazyLinear,
+    matrix_store::{AsBasisCombination, BasisIndexing, EffortfulMatrixStore, MatrixStore},
+};
 
 pub trait AlgebraStore<F: Field>:
     MulAssign<F>
