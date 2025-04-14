@@ -1,6 +1,6 @@
 [package]
 name = "chains_f2vect"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 license = "MIT"
 description = "chain complexes and dg algebra manipulations"
